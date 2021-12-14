@@ -110,7 +110,7 @@ describe("EtherDivvy", function() {
           to: etherDivvy.address,
           value: higher,
         })
-      ).to.be.revertedWith('Exceeds maximum contribution');
+      ).to.be.revertedWith('Cannot exceed maximum contribution limit');
     });
   });
 
@@ -131,8 +131,8 @@ describe("EtherDivvy", function() {
       const newMax     = ethers.utils.parseEther('50');
 
       expect(await etherDivvy.maxContribution()).to.equal(defaultMax);
-
       await etherDivvy.changeMaxContribution(newMax);
+
       expect(await etherDivvy.maxContribution()).to.equal(newMax);
     });
 
@@ -141,6 +141,23 @@ describe("EtherDivvy", function() {
 
       await expect(etherDivvy.changeMaxContribution(invalidMax))
         .to.be.revertedWith('Cannot set max contribution to zero');
+    });
+
+    it("cannot set max contribution lower than highest contribution", async function() {
+      let highestContribution = ethers.utils.parseEther('9');
+      let newMax = ethers.utils.parseEther('1');
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: highestContribution,
+      });
+
+      expect(await etherDivvy.highestContribution()).to.equal(highestContribution);
+
+      await expect(
+        etherDivvy.changeMaxContribution(newMax)
+      ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
     });
   });
 

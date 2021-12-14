@@ -47,24 +47,24 @@ contract EtherDivvy is Ownable {
     receive() external payable {
         uint amount = msg.value;
 
-        // To check a key exists - mappings create a namespace by default in
-        // which all possible keys exist, and values are initialized to 0/false. Therefore
-        // we check if their balance is zero to determind if they've contributed
+        // we check if an account balance is zero to determine if they've contributed
         require(0 == balances[msg.sender], 'Cannot contribute more than once per contribution window');
-        require(amount <= maxContribution, 'Exceeds maximum contribution');
+        require(amount <= maxContribution, 'Cannot exceed maximum contribution limit');
 
         if (highestContribution < amount) {
             highestContribution = amount;
         }
 
-        numberOfPartipants = numberOfPartipants.add(1);
         total = total.add(amount);
+        numberOfPartipants = numberOfPartipants.add(1);
         balances[msg.sender] = balances[msg.sender].add(amount);
     }
 
     // @param _amount Sets new limit an account can contribute
     function changeMaxContribution(uint _amount) public onlyOwner {
+        require(_amount >= highestContribution, 'Cannot set max contribution lower than highest contribution');
         require(_amount > 0 ether, 'Cannot set max contribution to zero');
+
         maxContribution = _amount;
     }
 }
