@@ -33,6 +33,7 @@ contract EtherDivvy is Ownable {
     uint public total; // total amount from contributing accounts
     uint public numberOfPartipants; // number the contract uses to divvy up the total
     uint public maxContribution; // maximum amount of ether for a contribution period
+    uint public highestContribution; // records highest so owner can't set maxContribution below
 
     address[] public accounts; // partipating accounts
     mapping(address => int) public balances; // tracks amount each account has contributed
@@ -44,6 +45,10 @@ contract EtherDivvy is Ownable {
 
     receive() external payable {
         uint amount = msg.value;
+
+        if (highestContribution < amount) {
+            highestContribution = amount;
+        }
 
         if (amount <= maxContribution) {
             numberOfPartipants = numberOfPartipants.add(1);

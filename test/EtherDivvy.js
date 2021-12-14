@@ -132,4 +132,25 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.numberOfPartipants()).to.equal(1);
     });
   });
+
+  describe("#highestContribution", function() {
+    it("returns highest account contribution amount", async function() {
+      let highest = ethers.utils.parseEther('9');
+      let notHighest = ethers.utils.parseEther('5');
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: notHighest,
+      });
+
+      await account2.sendTransaction({
+        from: account2.address,
+        to: etherDivvy.address,
+        value: highest,
+      });
+
+      expect(await etherDivvy.highestContribution()).to.equal(highest);
+    });
+  });
 });
