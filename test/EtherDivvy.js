@@ -59,7 +59,7 @@ describe("EtherDivvy", function() {
     it("cannot transfer contract ownership to someone else", async function() {
       await expect(
         etherDivvy.connect(nonContractOwner)
-          .transferOwnership(owner.address, {from: nonContractOwner.address})
+          .transferOwnership(account2.address, {from: nonContractOwner.address})
         ).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
@@ -68,6 +68,31 @@ describe("EtherDivvy", function() {
 
       await expect(etherDivvy.connect(nonContractOwner).changeMaxContribution(newMax))
         .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
+  describe("when an account successfully contributes to the contract", function() {
+    it("changes number of partipants by one", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther('1'),
+      });
+
+      expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+    });
+
+    it("changes total amount of contributions", async function() {
+      expect(await etherDivvy.total()).to.equal(0);
+
+      let amount = ethers.utils.parseEther('5');
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: amount,
+      });
+
+      expect(await etherDivvy.total()).to.equal(amount);
     });
   });
 });
