@@ -22,34 +22,39 @@ describe("EtherDivvy", function() {
         to: etherDivvy.address,
         value: ethers.utils.parseEther('1'),
       });
-
       expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+
+      await account2.sendTransaction({
+        from: account2.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther('1'),
+      });
+      expect(await etherDivvy.numberOfPartipants()).to.equal(2);
     });
 
     it("changes total amount of contributions", async function() {
       expect(await etherDivvy.total()).to.equal(0);
 
-      let amount = ethers.utils.parseEther('5');
+      let amount1 = ethers.utils.parseEther('5');
+      let amount2 = ethers.utils.parseEther('5');
+      let total   = ethers.utils.parseEther('10');
+
       await account1.sendTransaction({
         from: account1.address,
         to: etherDivvy.address,
-        value: amount,
+        value: amount1,
       });
+      expect(await etherDivvy.total()).to.equal(amount1);
 
-      expect(await etherDivvy.total()).to.equal(amount);
-    });
-
-    it("is added to accounts list", async function() {
-      await account1.sendTransaction({
-        from: account1.address,
+      await account2.sendTransaction({
+        from: account2.address,
         to: etherDivvy.address,
-        value: ethers.utils.parseEther('1'),
+        value: amount2,
       });
-
-      expect(await etherDivvy.getAccounts()).to.include(account1.address);
+      expect(await etherDivvy.total()).to.equal(total);
     });
 
-    it("contributes the max contribution limit", async function() {
+    it("can contribute the max contribution limit", async function() {
       let max = await etherDivvy.maxContribution();
 
       await account1.sendTransaction({
@@ -61,8 +66,8 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.numberOfPartipants()).to.equal(1);
     });
 
-    it("contributes less than the max contribution limit", async function() {
-      let max = await etherDivvy.maxContribution();
+    it("can contribute less than the max contribution limit", async function() {
+      let max      = await etherDivvy.maxContribution();
       let lessThan = ethers.utils.parseEther('5');
 
       expect(lessThan).to.be.below(max);
@@ -72,8 +77,40 @@ describe("EtherDivvy", function() {
         to: etherDivvy.address,
         value: lessThan,
       });
-
       expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+    });
+  });
+
+  describe("when an account unsuccessfully contributes to the contract", function() {
+    it("contributes multiple times", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther('1'),
+      });
+
+      await expect(
+        account1.sendTransaction({
+          from: account1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther('2'),
+        })
+      ).to.be.revertedWith('Cannot contribute more than once per contribution window');
+    });
+
+    it("contributes more than max contribution", async function() {
+      let max = await etherDivvy.maxContribution();
+      let higher = ethers.utils.parseEther('11');
+
+      expect(max).to.be.below(higher);
+
+      await expect(
+        account1.sendTransaction({
+          from: account1.address,
+          to: etherDivvy.address,
+          value: higher,
+        })
+      ).to.be.revertedWith('Exceeds maximum contribution');
     });
   });
 

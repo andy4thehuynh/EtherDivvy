@@ -31,35 +31,35 @@ contract EtherDivvy is Ownable {
     using SafeMath for uint;
 
     uint public total; // total amount from contributing accounts
-    uint public numberOfPartipants; // number the contract uses to divvy up the total
+    uint public numberOfPartipants; // number to divvy up total and get length of balances address
     uint public maxContribution; // maximum amount of ether for a contribution period
     uint public highestContribution; // records highest so owner can't set maxContribution below
 
-    address[] public accounts; // partipating accounts
-    mapping(address => int) public balances; // tracks amount each account has contributed
+    mapping(address => uint) public balances; // tracks amount each account has contributed
 
     constructor() {
-        maxContribution = 10 ether;
         total = 0 ether;
+        maxContribution = 10 ether;
+        highestContribution = 0 ether;
+        numberOfPartipants = 0;
     }
 
     receive() external payable {
         uint amount = msg.value;
 
+        // To check a key exists - mappings create a namespace by default in
+        // which all possible keys exist, and values are initialized to 0/false. Therefore
+        // we check if their balance is zero to determind if they've contributed
+        require(0 == balances[msg.sender], 'Cannot contribute more than once per contribution window');
+        require(amount <= maxContribution, 'Exceeds maximum contribution');
+
         if (highestContribution < amount) {
             highestContribution = amount;
         }
 
-        if (amount <= maxContribution) {
-            numberOfPartipants = numberOfPartipants.add(1);
-            total = total.add(amount);
-            accounts.push(msg.sender);
-        }
-    }
-
-    // @return List of partipating accounts
-    function getAccounts() public view returns (address[] memory) {
-        return accounts;
+        numberOfPartipants = numberOfPartipants.add(1);
+        total = total.add(amount);
+        balances[msg.sender] = balances[msg.sender].add(amount);
     }
 
     // @param _amount Sets new limit an account can contribute
