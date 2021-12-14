@@ -18,6 +18,7 @@ pragma solidity ^0.8.0;
 */
 
 import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -46,6 +47,13 @@ contract EtherDivvy is Ownable {
 
         numberOfPartipants = numberOfPartipants.add(1);
         total = total.add(amount);
+
+        accounts.push(msg.sender);
+    }
+
+    // @return List of partipating accounts
+    function getAccounts() public view returns (address[] memory) {
+        return accounts;
     }
 
     // @param _amount Sets new limit an account can contribute

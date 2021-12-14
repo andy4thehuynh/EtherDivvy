@@ -94,5 +94,15 @@ describe("EtherDivvy", function() {
 
       expect(await etherDivvy.total()).to.equal(amount);
     });
+
+    it("is added to accounts list", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther('1'),
+      });
+
+      expect(await etherDivvy.getAccounts()).to.include(account1.address);
+    });
   });
 });
