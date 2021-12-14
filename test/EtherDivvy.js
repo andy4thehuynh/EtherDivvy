@@ -104,5 +104,32 @@ describe("EtherDivvy", function() {
 
       expect(await etherDivvy.getAccounts()).to.include(account1.address);
     });
+
+    it("contributes the max contribution limit", async function() {
+      let max = await etherDivvy.maxContribution();
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: max,
+      });
+
+      expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+    });
+
+    it("contributes less than the max contribution limit", async function() {
+      let max = await etherDivvy.maxContribution();
+      let lessThan = ethers.utils.parseEther('5');
+
+      expect(lessThan).to.be.below(max);
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: lessThan,
+      });
+
+      expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+    });
   });
 });

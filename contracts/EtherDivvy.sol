@@ -45,10 +45,11 @@ contract EtherDivvy is Ownable {
     receive() external payable {
         uint amount = msg.value;
 
-        numberOfPartipants = numberOfPartipants.add(1);
-        total = total.add(amount);
-
-        accounts.push(msg.sender);
+        if (amount <= maxContribution) {
+            numberOfPartipants = numberOfPartipants.add(1);
+            total = total.add(amount);
+            accounts.push(msg.sender);
+        }
     }
 
     // @return List of partipating accounts
