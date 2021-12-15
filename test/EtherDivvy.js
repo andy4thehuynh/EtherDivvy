@@ -112,6 +112,19 @@ describe("EtherDivvy", function() {
         })
       ).to.be.revertedWith('Cannot exceed maximum contribution limit');
     });
+
+    it("contributes when withdrawal window is open", async function() {
+      await etherDivvy.openWithdrawalWindow();
+      expect(await etherDivvy.withdrawable()).to.equal(true);
+
+      await expect(
+        account1.sendTransaction({
+          from: account1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther('1'),
+        })
+      ).to.be.revertedWith('Withdrawal window is open - cannot contribute right now');
+    });
   });
 
   describe("when contract owner", function() {
@@ -158,6 +171,13 @@ describe("EtherDivvy", function() {
       await expect(
         etherDivvy.changeMaxContribution(newMax)
       ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
+    });
+
+    it("can open withdrawal window to pull funds", async function() {
+      expect(await etherDivvy.withdrawable()).to.equal(false);
+
+      await etherDivvy.openWithdrawalWindow();
+      expect(await etherDivvy.withdrawable()).to.equal(true);
     });
   });
 

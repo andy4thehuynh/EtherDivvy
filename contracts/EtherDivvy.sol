@@ -35,6 +35,7 @@ contract EtherDivvy is Ownable {
     uint public maxContribution; // maximum amount of ether for a contribution period
     uint public highestContribution; // records highest so owner can't set maxContribution below
 
+    bool public withdrawable; // keeps track when withdrawal window is open to pull funds
     mapping(address => uint) public balances; // tracks amount each account has contributed
 
     constructor() {
@@ -42,6 +43,7 @@ contract EtherDivvy is Ownable {
         maxContribution = 10 ether;
         highestContribution = 0 ether;
         numberOfPartipants = 0;
+        withdrawable = false;
     }
 
     receive() external payable {
@@ -50,6 +52,7 @@ contract EtherDivvy is Ownable {
         // we check if an account balance is zero to determine if they've contributed
         require(0 == balances[msg.sender], 'Cannot contribute more than once per contribution window');
         require(amount <= maxContribution, 'Cannot exceed maximum contribution limit');
+        require(!withdrawable, 'Withdrawal window is open - cannot contribute right now');
 
         if (highestContribution < amount) {
             highestContribution = amount;
@@ -66,5 +69,9 @@ contract EtherDivvy is Ownable {
         require(_amount > 0 ether, 'Cannot set max contribution to zero');
 
         maxContribution = _amount;
+    }
+
+    function openWithdrawalWindow() public onlyOwner {
+        withdrawable = true;
     }
 }
