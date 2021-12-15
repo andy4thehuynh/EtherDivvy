@@ -179,6 +179,13 @@ describe("EtherDivvy", function() {
       await etherDivvy.toggleWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
     });
+
+    it("can not configure max contribution when withdrawal window is open", async function() {
+      await etherDivvy.toggleWithdrawalWindow();
+
+      await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
+        .to.be.revertedWith('Withdrawal window is open - cannot change max contribution');
+    });
   });
 
   describe("when not contract owner", function() {
