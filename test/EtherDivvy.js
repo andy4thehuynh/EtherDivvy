@@ -16,8 +16,8 @@ describe("EtherDivvy", function() {
   });
 
 
-  describe("contributing ether", function() {
-    describe("when an account successfully contributes to the contract", function() {
+  describe("when contributing ether", function() {
+    describe("an account successfully contributes to the contract", function() {
       it("changes number of partipants by one", async function() {
         await acc1.sendTransaction({
           from: acc1.address,
@@ -131,8 +131,8 @@ describe("EtherDivvy", function() {
   })
 
 
-  describe("withdrawing ether", function() {
-    describe("when an account successfully withdraws funds", function() {
+  describe("when withdrawing ether", function() {
+    describe("an account successfully withdraws funds", function() {
       beforeEach(async() => {
         await acc1.sendTransaction({
           from: acc1.address,
@@ -172,7 +172,21 @@ describe("EtherDivvy", function() {
       });
     });
 
-    describe("when an account unsuccessfully withdraws funds", function() {
+    describe("an account unsuccessfully withdraws funds", function() {
+      beforeEach(async() => {
+        await acc1.sendTransaction({
+          from: acc1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther('8')
+        });
+      });
+
+      it("when withdrawal window is closed", async function() {
+        expect(await etherDivvy.withdrawable()).to.equal(false);
+
+        await expect(etherDivvy.connect(acc1).withdraw())
+          .to.be.revertedWith('Withdrawal window open - cannot change max contribution');
+      });
     });
 
     describe("when there's remaining ether after all parties have withdrawn funds", function() {
@@ -213,7 +227,7 @@ describe("EtherDivvy", function() {
   });
 
 
-  describe("contract ownership", function() {
+  describe("for contract ownership", function() {
     describe("when contract owner", function() {
       it("set to owner by default on deploying the contract", async function() {
         expect(owner.address).to.equal(await etherDivvy.owner());
