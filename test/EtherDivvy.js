@@ -205,7 +205,7 @@ describe("EtherDivvy", function() {
   });
 
 
-  describe("when withdrawal window is closed and there's remaining ether", function() {
+  describe("when remaining ether exists after accounts pull funds and withdrawal window is closed", function() {
 
     beforeEach(async() => {
       await acc1.sendTransaction({
@@ -320,6 +320,67 @@ describe("EtherDivvy", function() {
       await expect(
         etherDivvy.changeMaxContribution(newMax)
       ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
+    });
+
+
+    describe("#openContributionWindow", function() {
+
+      beforeEach(async() => {
+        await acc1.sendTransaction({
+          from: acc1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther('1'),
+        });
+
+        await acc2.sendTransaction({
+          from: acc2.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther('5'),
+        });
+
+        await etherDivvy.openWithdrawalWindow();
+      });
+
+      it("sets total to zero", async function() {
+        expect(await etherDivvy.total()).to.equal(ethers.utils.parseEther('6'));
+
+        await etherDivvy.openContributionWindow();
+        expect(await etherDivvy.total()).to.equal(0);
+      });
+
+      it("sets numberOfPartipants to zero", async function() {
+        expect(await etherDivvy.numberOfPartipants()).to.equal(2);
+
+        await etherDivvy.openContributionWindow();
+        expect(await etherDivvy.numberOfPartipants()).to.equal(0);
+      });
+
+      it("resets maxContribution to default", async function() {
+        let defaultMax = ethers.utils.parseEther('10');
+        let newMax = ethers.utils.parseEther('50');
+
+        await etherDivvy.openContributionWindow();
+        await etherDivvy.changeMaxContribution(newMax);
+
+        await etherDivvy.openWithdrawalWindow();
+        await etherDivvy.openContributionWindow();
+
+        expect(await etherDivvy.maxContribution()).to.equal(defaultMax);
+      });
+
+      it("sets highestContribution to zero", async function() {
+        expect(await etherDivvy.highestContribution()).to.equal(ethers.utils.parseEther('5'));
+
+        await etherDivvy.openContributionWindow();
+        expect(await etherDivvy.highestContribution()).to.equal(0);
+      });
+
+      it("sets withdrawable to false", async function() {
+        expect(await etherDivvy.withdrawable()).to.equal(true);
+
+        await etherDivvy.openContributionWindow();
+        expect(await etherDivvy.withdrawable()).to.equal(false);
+      });
     });
   });
 

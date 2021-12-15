@@ -30,6 +30,8 @@ contract EtherDivvy is Ownable {
      */
     using SafeMath for uint;
 
+    uint constant DEFAULT_MAX_CONTRIB = 10 ether;
+
     uint public total; // total amount from contributing accounts
     uint public numberOfPartipants; // number to divvy up total and get length of balances address
     uint public maxContribution; // maximum amount of ether for a contribution period
@@ -41,12 +43,12 @@ contract EtherDivvy is Ownable {
     mapping(address => uint) public balances; // tracks amount each account has contributed
 
     constructor() {
-        total = 0 ether;
-        maxContribution = 10 ether;
-        highestContribution = 0 ether;
+        total = 0;
         numberOfPartipants = 0;
-        withdrawable = false;
+        maxContribution = DEFAULT_MAX_CONTRIB;
+        highestContribution = 0 ether;
         contributableAt = block.timestamp;
+        withdrawable = false;
     }
 
     receive() external payable {
@@ -92,7 +94,11 @@ contract EtherDivvy is Ownable {
     }
 
     function openContributionWindow() external onlyOwner {
-
+        total = 0;
+        numberOfPartipants = 0;
+        maxContribution = DEFAULT_MAX_CONTRIB;
+        highestContribution = 0;
+        withdrawable = false;
     }
 
     function getBalanceFor(address _address) public view returns (uint) {
