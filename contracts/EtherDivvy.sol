@@ -100,7 +100,7 @@ contract EtherDivvy is Ownable {
         withdrawable = false;
     }
 
-    function getBalanceFor(address _address) public view returns (uint) {
+    function getBalanceFor(address _address) external view returns (uint) {
         return balances[_address];
     }
 }
