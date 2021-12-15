@@ -114,7 +114,7 @@ describe("EtherDivvy", function() {
     });
 
     it("contributes when withdrawal window is open", async function() {
-      await etherDivvy.toggleWithdrawalWindow();
+      await etherDivvy.openWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
 
       await expect(
@@ -176,19 +176,27 @@ describe("EtherDivvy", function() {
     it("can open withdrawal window to pull funds", async function() {
       expect(await etherDivvy.withdrawable()).to.equal(false);
 
-      await etherDivvy.toggleWithdrawalWindow();
+      await etherDivvy.openWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
     });
 
     it("can not configure max contribution when withdrawal window is open", async function() {
-      await etherDivvy.toggleWithdrawalWindow();
+      await etherDivvy.openWithdrawalWindow();
 
       await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
-        .to.be.revertedWith('Withdrawal window is open - cannot change max contribution');
+        .to.be.revertedWith('Withdrawal window open - cannot change max contribution');
     });
 
-    it("sets contribution window on deploy", async function() {
+    it("sets contribution window time on deploy", async function() {
       expect(await etherDivvy.contributableAt()).to.not.equal(0);
+    });
+
+    it("can not open withdrawal window when already open", async function() {
+      await etherDivvy.openWithdrawalWindow();
+      expect(await etherDivvy.withdrawable()).to.equal(true);
+
+      await expect(etherDivvy.openWithdrawalWindow())
+        .to.be.revertedWith('Withdrawal window already open');
     });
   });
 
@@ -218,10 +226,10 @@ describe("EtherDivvy", function() {
         .to.be.revertedWith('Ownable: caller is not the owner');
     });
 
-    it("cannot toggle withdrawal window to pull funds", async function() {
+    it("cannot open withdrawal window to pull funds", async function() {
       expect(await etherDivvy.withdrawable()).to.equal(false);
 
-      await expect(etherDivvy.connect(nonContractOwner).toggleWithdrawalWindow())
+      await expect(etherDivvy.connect(nonContractOwner).openWithdrawalWindow())
         .to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
