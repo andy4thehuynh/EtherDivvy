@@ -100,15 +100,15 @@ describe("EtherDivvy", function() {
 
     it("contributes more than max contribution", async function() {
       let max = await etherDivvy.maxContribution();
-      let higher = ethers.utils.parseEther('11');
+      let higherContribution = ethers.utils.parseEther('11');
 
-      expect(max).to.be.below(higher);
+      expect(max).to.be.below(higherContribution);
 
       await expect(
         account1.sendTransaction({
           from: account1.address,
           to: etherDivvy.address,
-          value: higher,
+          value: higherContribution,
         })
       ).to.be.revertedWith('Cannot exceed maximum contribution limit');
     });
