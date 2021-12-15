@@ -186,6 +186,10 @@ describe("EtherDivvy", function() {
       await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
         .to.be.revertedWith('Withdrawal window is open - cannot change max contribution');
     });
+
+    it("sets contribution window on deploy", async function() {
+      expect(await etherDivvy.contributableAt()).to.not.equal(0);
+    });
   });
 
   describe("when not contract owner", function() {

@@ -34,6 +34,7 @@ contract EtherDivvy is Ownable {
     uint public numberOfPartipants; // number to divvy up total and get length of balances address
     uint public maxContribution; // maximum amount of ether for a contribution period
     uint public highestContribution; // records highest so owner can't set maxContribution below
+    uint public contributableAt; // when contribution window starts
 
     bool public withdrawable; // keeps track when withdrawal window is open to pull funds
     mapping(address => uint) public balances; // tracks amount each account has contributed
@@ -44,6 +45,7 @@ contract EtherDivvy is Ownable {
         highestContribution = 0 ether;
         numberOfPartipants = 0;
         withdrawable = false;
+        contributableAt = block.timestamp;
     }
 
     receive() external payable {
