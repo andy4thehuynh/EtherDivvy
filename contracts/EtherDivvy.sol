@@ -66,7 +66,13 @@ contract EtherDivvy is Ownable {
         balances[msg.sender] = balances[msg.sender].add(amount);
     }
 
-    // @param _amount Sets new limit an account can contribute
+    function withdraw() public {
+        uint funds = total.div(numberOfPartipants);
+        balances[msg.sender] = 0;
+
+        (bool success, bytes memory data) = msg.sender.call{value: funds}("");
+    }
+
     function changeMaxContribution(uint _amount) public onlyOwner {
         require(!withdrawable, 'Withdrawal window open - cannot change max contribution');
         require(_amount >= highestContribution, 'Cannot set max contribution lower than highest contribution');
@@ -80,5 +86,9 @@ contract EtherDivvy is Ownable {
 
         withdrawable = true;
         contributableAt = block.timestamp;
+    }
+
+    function getBalanceFor(address _address) public view returns (uint) {
+        return balances[_address];
     }
 }
