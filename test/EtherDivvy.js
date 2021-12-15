@@ -315,6 +315,12 @@ describe("EtherDivvy", function() {
         etherDivvy.changeMaxContribution(newMax)
       ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
     });
+
+    it("can open contribution window", async function() {
+      await expect(
+        etherDivvy.openContributionWindow()
+      ).to.not.be.revertedWith('Ownable: caller is not the owner');
+    });
   });
 
 
@@ -350,6 +356,12 @@ describe("EtherDivvy", function() {
 
       await expect(etherDivvy.connect(nonContractOwner).openWithdrawalWindow())
         .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it("cannot open contribution window", async function() {
+      await expect(
+        etherDivvy.connect(acc1).openContributionWindow()
+      ).to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
 

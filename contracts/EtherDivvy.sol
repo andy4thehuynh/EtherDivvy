@@ -91,6 +91,10 @@ contract EtherDivvy is Ownable {
         contributableAt = block.timestamp;
     }
 
+    function openContributionWindow() external onlyOwner {
+
+    }
+
     function getBalanceFor(address _address) public view returns (uint) {
         return balances[_address];
     }
