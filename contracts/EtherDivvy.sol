@@ -39,6 +39,7 @@ contract EtherDivvy is Ownable {
     uint public contributableAt; // when contribution window starts
 
     bool public withdrawable; // keeps track when withdrawal window is open to pull funds
+    address[] public accounts; // needed to set balances of contributing accounts to zero
     mapping(address => uint) public balances; // tracks amount each account has contributed
 
     constructor() {
@@ -65,6 +66,7 @@ contract EtherDivvy is Ownable {
         total = total.add(amount);
         numberOfPartipants = numberOfPartipants.add(1);
         balances[msg.sender] = balances[msg.sender].add(amount);
+        accounts.push(msg.sender);
     }
 
     function withdraw() external {
@@ -98,9 +100,14 @@ contract EtherDivvy is Ownable {
         maxContribution = DEFAULT_MAX_CONTRIB;
         highestContribution = 0;
         withdrawable = false;
+        delete accounts;
     }
 
     function getBalanceFor(address _address) external view returns (uint) {
         return balances[_address];
+    }
+
+    function getAccounts() external view returns (address[] memory) {
+        return accounts;
     }
 }

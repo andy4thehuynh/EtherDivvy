@@ -83,7 +83,18 @@ describe("EtherDivvy", function() {
         });
         expect(await etherDivvy.numberOfPartipants()).to.equal(1);
       });
+
+      it("is added to accounts list", async function() {
+        await acc1.sendTransaction({
+          from: acc1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther('1'),
+        });
+
+        expect(await etherDivvy.getAccounts()).to.include(acc1.address);
+      });
     });
+
 
     describe("unsuccessfully", function() {
 
@@ -176,6 +187,7 @@ describe("EtherDivvy", function() {
         expect(await etherDivvy.getBalanceFor(acc2.address)).to.equal(0);
       });
     });
+
 
     describe("unsuccessfully", function() {
 
@@ -380,6 +392,13 @@ describe("EtherDivvy", function() {
 
         await etherDivvy.openContributionWindow();
         expect(await etherDivvy.withdrawable()).to.equal(false);
+      });
+
+      it("empties accounts list", async function() {
+        await expect(await etherDivvy.getAccounts()).to.not.be.empty;
+
+        await etherDivvy.openContributionWindow();
+        expect(await etherDivvy.getAccounts()).to.be.empty;
       });
     });
   });
