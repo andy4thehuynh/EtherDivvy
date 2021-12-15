@@ -114,7 +114,7 @@ describe("EtherDivvy", function() {
     });
 
     it("contributes when withdrawal window is open", async function() {
-      await etherDivvy.openWithdrawalWindow();
+      await etherDivvy.toggleWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
 
       await expect(
@@ -176,7 +176,7 @@ describe("EtherDivvy", function() {
     it("can open withdrawal window to pull funds", async function() {
       expect(await etherDivvy.withdrawable()).to.equal(false);
 
-      await etherDivvy.openWithdrawalWindow();
+      await etherDivvy.toggleWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
     });
   });
@@ -204,6 +204,13 @@ describe("EtherDivvy", function() {
       const newMax = ethers.utils.parseEther('5');
 
       await expect(etherDivvy.connect(nonContractOwner).changeMaxContribution(newMax))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it("cannot toggle withdrawal window to pull funds", async function() {
+      expect(await etherDivvy.withdrawable()).to.equal(false);
+
+      await expect(etherDivvy.connect(nonContractOwner).toggleWithdrawalWindow())
         .to.be.revertedWith('Ownable: caller is not the owner');
     });
   });

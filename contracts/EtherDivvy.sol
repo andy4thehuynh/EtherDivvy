@@ -71,7 +71,8 @@ contract EtherDivvy is Ownable {
         maxContribution = _amount;
     }
 
-    function openWithdrawalWindow() public onlyOwner {
-        withdrawable = true;
+    function toggleWithdrawalWindow() public onlyOwner {
+        bool previous = withdrawable;
+        withdrawable = !previous;
     }
 }
