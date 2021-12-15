@@ -87,6 +87,19 @@ describe("EtherDivvy", function() {
 
     describe("unsuccessfully", function() {
 
+      it("when withdrawal window is open", async function() {
+        await etherDivvy.openWithdrawalWindow();
+        expect(await etherDivvy.withdrawable()).to.equal(true);
+
+        await expect(
+          acc1.sendTransaction({
+            from: acc1.address,
+            to: etherDivvy.address,
+            value: ethers.utils.parseEther('1'),
+          })
+        ).to.be.revertedWith('Withdrawal window is open - cannot contribute right now');
+      });
+
       it("contributes multiple times during a contribution window", async function() {
         await acc1.sendTransaction({
           from: acc1.address,
@@ -116,19 +129,6 @@ describe("EtherDivvy", function() {
             value: higherContribution,
           })
         ).to.be.revertedWith('Cannot exceed maximum contribution limit');
-      });
-
-      it("when withdrawal window is open", async function() {
-        await etherDivvy.openWithdrawalWindow();
-        expect(await etherDivvy.withdrawable()).to.equal(true);
-
-        await expect(
-          acc1.sendTransaction({
-            from: acc1.address,
-            to: etherDivvy.address,
-            value: ethers.utils.parseEther('1'),
-          })
-        ).to.be.revertedWith('Withdrawal window is open - cannot contribute right now');
       });
     });
   });
@@ -277,11 +277,10 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.withdrawable()).to.equal(true);
     });
 
-    it("cannot change max contribution when withdrawal window is open", async function() {
-      await etherDivvy.openWithdrawalWindow();
-
-      await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
-        .to.be.revertedWith('Withdrawal window open - cannot change max contribution');
+    it("can open contribution window", async function() {
+      await expect(
+        etherDivvy.openContributionWindow()
+      ).to.not.be.revertedWith('Ownable: caller is not the owner');
     });
 
     it("cannot open withdrawal window when already open", async function() {
@@ -290,6 +289,13 @@ describe("EtherDivvy", function() {
 
       await expect(etherDivvy.openWithdrawalWindow())
         .to.be.revertedWith('Withdrawal window already open');
+    });
+
+    it("cannot change max contribution when withdrawal window is open", async function() {
+      await etherDivvy.openWithdrawalWindow();
+
+      await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
+        .to.be.revertedWith('Withdrawal window open - cannot change max contribution');
     });
 
     it("cannot change max contribution to zero ether", async function() {
@@ -314,12 +320,6 @@ describe("EtherDivvy", function() {
       await expect(
         etherDivvy.changeMaxContribution(newMax)
       ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
-    });
-
-    it("can open contribution window", async function() {
-      await expect(
-        etherDivvy.openContributionWindow()
-      ).to.not.be.revertedWith('Ownable: caller is not the owner');
     });
   });
 
