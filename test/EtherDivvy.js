@@ -252,6 +252,10 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.contributableAt()).to.not.equal(0);
     });
 
+    it("sets withdrawable window time to zero on deploy", async function() {
+      expect(await etherDivvy.withdrawableAt()).to.equal(0);
+    });
+
     it("can transfer ownership to another address", async function() {
       await etherDivvy.transferOwnership(acc1.address, {from: owner.address});
 
@@ -319,6 +323,52 @@ describe("EtherDivvy", function() {
       await expect(
         etherDivvy.changeMaxContribution(newMax)
       ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
+    });
+
+
+    describe("#openWithdrawalWindow", function() {
+
+      it("sets withdrawable to true", async function() {
+        await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_mine");
+        expect(await etherDivvy.withdrawable()).to.equal(false);
+
+        await etherDivvy.openWithdrawalWindow();
+        expect(await etherDivvy.withdrawable()).to.equal(true);
+      });
+
+      it("sets withdrawableAt timestamp", async function() {
+        await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_mine");
+        expect(await etherDivvy.withdrawableAt()).to.equal(0);
+
+        await etherDivvy.openWithdrawalWindow();
+        expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
+      });
+
+      it("reverts if under two weeks since contribution window opened", async function() {
+        let underTwoWeeks = 13 * 24 * 60 * 60; // 13 days
+
+        await ethers.provider.send("evm_increaseTime", [underTwoWeeks]);
+        await ethers.provider.send("evm_mine");
+
+        await expect(
+          etherDivvy.openWithdrawalWindow()
+        ).to.be.revertedWith('Two weeks must pass before opening withdrawal window');
+      });
+
+      it("does not revert if over two weeks since contribution window opened", async function() {
+        let overTwoWeeks = 20 * 24 * 60 * 60; // 20 days
+
+        await ethers.provider.send("evm_increaseTime", [overTwoWeeks]);
+        await ethers.provider.send("evm_mine");
+
+        await etherDivvy.openWithdrawalWindow();
+
+        await expect(
+          etherDivvy.openWithdrawalWindow()
+        ).to.not.be.revertedWith('Two weeks must pass before opening withdrawal window');
+      });
     });
 
 
