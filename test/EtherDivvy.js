@@ -159,14 +159,14 @@ describe("EtherDivvy", function() {
       it("the withdrawal window is open", async function() {
         expect(await etherDivvy.withdrawable()).to.equal(true);
 
-        await expect(await etherDivvy.connect(acc1).withdraw())
+        expect(await etherDivvy.connect(acc1).withdraw())
           .to.changeEtherBalance(acc1, ethers.utils.parseEther('6'));
       });
 
       it("changes account ether balance with their share", async function() {
-        await expect(await etherDivvy.connect(acc1).withdraw())
+        expect(await etherDivvy.connect(acc1).withdraw())
           .to.changeEtherBalance(acc1, ethers.utils.parseEther('6'));
-        await expect(await etherDivvy.connect(acc2).withdraw())
+        expect(await etherDivvy.connect(acc2).withdraw())
           .to.changeEtherBalance(acc2, ethers.utils.parseEther('6'));
       });
 
@@ -193,8 +193,9 @@ describe("EtherDivvy", function() {
       it("the withdrawal window is closed", async function() {
         expect(await etherDivvy.withdrawable()).to.equal(false);
 
-        await expect(etherDivvy.connect(acc1).withdraw())
-          .to.be.revertedWith('Withdrawal window open - cannot change max contribution');
+        await expect(
+          etherDivvy.connect(acc1).withdraw()
+        ).to.be.revertedWith('Withdrawal window open - cannot change max contribution');
       });
 
       it("did not contribute any ether", async function() {
@@ -203,8 +204,9 @@ describe("EtherDivvy", function() {
         await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
         await ethers.provider.send("evm_mine");
         await etherDivvy.openWithdrawalWindow();
-        await expect(etherDivvy.connect(acc2).withdraw())
-          .to.be.revertedWith('Account did not contribute - cannot withdraw funds');
+        await expect(
+          etherDivvy.connect(acc2).withdraw()
+        ).to.be.revertedWith('Account did not contribute - cannot withdraw funds');
       });
     });
   });
@@ -237,11 +239,11 @@ describe("EtherDivvy", function() {
     });
 
     it("the remaining ether stays in the contract", async function() {
-      await expect(await etherDivvy.connect(acc1).withdraw())
+      expect(await etherDivvy.connect(acc1).withdraw())
         .to.changeEtherBalance(acc1, ethers.utils.parseEther('4.333333333333333333'));
-      await expect(await etherDivvy.connect(acc2).withdraw())
+      expect(await etherDivvy.connect(acc2).withdraw())
         .to.changeEtherBalance(acc2, ethers.utils.parseEther('4.333333333333333333'));
-      await expect(await etherDivvy.connect(acc3).withdraw())
+      expect(await etherDivvy.connect(acc3).withdraw())
         .to.changeEtherBalance(acc3, ethers.utils.parseEther('4.333333333333333333'));
 
       expect(await etherDivvy.provider.getBalance(etherDivvy.address))
@@ -302,8 +304,9 @@ describe("EtherDivvy", function() {
       await etherDivvy.openWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
 
-      await expect(etherDivvy.openWithdrawalWindow())
-        .to.be.revertedWith('Withdrawal window already open');
+      await expect(
+        etherDivvy.openWithdrawalWindow()
+      ).to.be.revertedWith('Withdrawal window already open');
     });
 
     it("cannot change max contribution when withdrawal window is open", async function() {
@@ -311,15 +314,17 @@ describe("EtherDivvy", function() {
       await ethers.provider.send("evm_mine");
       await etherDivvy.openWithdrawalWindow();
 
-      await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
-        .to.be.revertedWith('Withdrawal window open - cannot change max contribution');
+      await expect(
+        etherDivvy.changeMaxContribution(ethers.utils.parseEther('1'))
+      ).to.be.revertedWith('Withdrawal window open - cannot change max contribution');
     });
 
     it("cannot change max contribution to zero ether", async function() {
       const invalidMax = ethers.utils.parseEther('0');
 
-      await expect(etherDivvy.changeMaxContribution(invalidMax))
-        .to.be.revertedWith('Cannot set max contribution to zero');
+      await expect(
+        etherDivvy.changeMaxContribution(invalidMax)
+      ).to.be.revertedWith('Cannot set max contribution to zero');
     });
 
     it("cannot change max contribution lower than highestContribution", async function() {
@@ -443,17 +448,17 @@ describe("EtherDivvy", function() {
       });
 
       it("empties accounts list", async function() {
-        await expect(await etherDivvy.getAccounts()).to.not.be.empty;
+        expect(await etherDivvy.getAccounts()).to.not.be.empty;
 
         await etherDivvy.openContributionWindow();
         expect(await etherDivvy.getAccounts()).to.be.empty;
       });
 
       it("sets withdrawableAt to zero", async function() {
-        await expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
+        expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
 
         await etherDivvy.openContributionWindow();
-        await expect(await etherDivvy.withdrawableAt()).to.equal(0);
+        expect(await etherDivvy.withdrawableAt()).to.equal(0);
       });
 
       it("sets contributing account balances to zero", async function() {
@@ -481,8 +486,7 @@ describe("EtherDivvy", function() {
 
     it("cannot transfer ownership to another address", async function() {
       await expect(
-        etherDivvy.connect(nonContractOwner)
-          .transferOwnership(acc2.address, {from: nonContractOwner.address})
+        etherDivvy.connect(nonContractOwner).transferOwnership(acc2.address, {from: nonContractOwner.address})
         ).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
