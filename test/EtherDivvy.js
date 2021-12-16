@@ -86,6 +86,8 @@ describe("EtherDivvy", function() {
     describe("unsuccessfully", function() {
 
       it("when withdrawal window is open", async function() {
+        await ethers.provider.send("evm_increaseTime", [15 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_mine");
         await etherDivvy.openWithdrawalWindow();
         expect(await etherDivvy.withdrawable()).to.equal(true);
 
@@ -149,6 +151,8 @@ describe("EtherDivvy", function() {
           value: ethers.utils.parseEther('4')
         });
 
+        await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_mine");
         await etherDivvy.openWithdrawalWindow();
       });
 
@@ -196,6 +200,8 @@ describe("EtherDivvy", function() {
       it("did not contribute any ether", async function() {
         expect(await etherDivvy.getBalanceFor(acc2.address)).to.equal(0);
 
+        await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_mine");
         await etherDivvy.openWithdrawalWindow();
         await expect(etherDivvy.connect(acc2).withdraw())
           .to.be.revertedWith('Account did not contribute - cannot withdraw funds');
@@ -225,6 +231,8 @@ describe("EtherDivvy", function() {
         value: ethers.utils.parseEther('1')
       });
 
+      await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
       await etherDivvy.openWithdrawalWindow();
     });
 
@@ -276,6 +284,8 @@ describe("EtherDivvy", function() {
     it("can open withdrawal window", async function() {
       expect(await etherDivvy.withdrawable()).to.equal(false);
 
+      await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
       await etherDivvy.openWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
     });
@@ -287,6 +297,8 @@ describe("EtherDivvy", function() {
     });
 
     it("cannot open withdrawal window when already open", async function() {
+      await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
       await etherDivvy.openWithdrawalWindow();
       expect(await etherDivvy.withdrawable()).to.equal(true);
 
@@ -295,6 +307,8 @@ describe("EtherDivvy", function() {
     });
 
     it("cannot change max contribution when withdrawal window is open", async function() {
+      await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
       await etherDivvy.openWithdrawalWindow();
 
       await expect(etherDivvy.changeMaxContribution(ethers.utils.parseEther('1')))
@@ -387,6 +401,8 @@ describe("EtherDivvy", function() {
           value: ethers.utils.parseEther('5'),
         });
 
+        await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_mine");
         await etherDivvy.openWithdrawalWindow();
       });
 
