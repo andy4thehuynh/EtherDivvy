@@ -105,6 +105,7 @@ contract EtherDivvy is Ownable {
         maxContribution = DEFAULT_MAX_CONTRIBUTION;
         highestContribution = 0;
         withdrawable = false;
+        withdrawableAt = 0;
         delete accounts;
     }
 

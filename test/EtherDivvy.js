@@ -449,6 +449,13 @@ describe("EtherDivvy", function() {
         expect(await etherDivvy.getAccounts()).to.be.empty;
       });
 
+      it("sets withdrawableAt to zero", async function() {
+        await expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
+
+        await etherDivvy.openContributionWindow();
+        await expect(await etherDivvy.withdrawableAt()).to.equal(0);
+      });
+
       it("sets contributing account balances to zero", async function() {
         await etherDivvy.openContributionWindow();
 
