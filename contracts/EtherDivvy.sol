@@ -33,7 +33,6 @@ contract EtherDivvy is Ownable {
     uint constant DEFAULT_MAX_CONTRIB = 10 ether;
 
     uint public total; // total amount from contributing accounts
-    uint public numberOfPartipants; // number to divvy up total and get length of balances address
     uint public maxContribution; // maximum amount of ether for a contribution period
     uint public highestContribution; // records highest so owner can't set maxContribution below
     uint public contributableAt; // when contribution window starts
@@ -44,7 +43,6 @@ contract EtherDivvy is Ownable {
 
     constructor() {
         total = 0;
-        numberOfPartipants = 0;
         maxContribution = DEFAULT_MAX_CONTRIB;
         highestContribution = 0 ether;
         contributableAt = block.timestamp;
@@ -64,7 +62,6 @@ contract EtherDivvy is Ownable {
         }
 
         total = total.add(amount);
-        numberOfPartipants = numberOfPartipants.add(1);
         balances[msg.sender] = balances[msg.sender].add(amount);
         accounts.push(msg.sender);
     }
@@ -73,7 +70,7 @@ contract EtherDivvy is Ownable {
         require(withdrawable, 'Withdrawal window open - cannot change max contribution');
         require(balances[msg.sender] != 0, 'Account did not contribute - cannot withdraw funds');
 
-        uint funds = total.div(numberOfPartipants);
+        uint funds = total.div(accounts.length);
         balances[msg.sender] = 0;
 
         (bool success, bytes memory data) = msg.sender.call{value: funds}("");
@@ -95,8 +92,12 @@ contract EtherDivvy is Ownable {
     }
 
     function openContributionWindow() external onlyOwner {
+        // Resets participating account balances to zero for next contribution window
+        for (uint i; i < accounts.length; i += 1) {
+            balances[accounts[i]] = 0;
+        }
+
         total = 0;
-        numberOfPartipants = 0;
         maxContribution = DEFAULT_MAX_CONTRIB;
         highestContribution = 0;
         withdrawable = false;

@@ -20,22 +20,6 @@ describe("EtherDivvy", function() {
 
     describe("successfully", function() {
 
-      it("changes numberOfPartipants by one", async function() {
-        await acc1.sendTransaction({
-          from: acc1.address,
-          to: etherDivvy.address,
-          value: ethers.utils.parseEther('1'),
-        });
-        expect(await etherDivvy.numberOfPartipants()).to.equal(1);
-
-        await acc2.sendTransaction({
-          from: acc2.address,
-          to: etherDivvy.address,
-          value: ethers.utils.parseEther('1'),
-        });
-        expect(await etherDivvy.numberOfPartipants()).to.equal(2);
-      });
-
       it("changes total amount of contributions", async function() {
         expect(await etherDivvy.total()).to.equal(0);
 
@@ -67,7 +51,8 @@ describe("EtherDivvy", function() {
           value: max,
         });
 
-        expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+        let accountsCount = await etherDivvy.getAccounts();
+        expect(await accountsCount.length).to.equal(1);
       });
 
       it("less than max contribution limit", async function() {
@@ -81,7 +66,9 @@ describe("EtherDivvy", function() {
           to: etherDivvy.address,
           value: lessThan,
         });
-        expect(await etherDivvy.numberOfPartipants()).to.equal(1);
+
+        let accountsCount = await etherDivvy.getAccounts();
+        expect(await accountsCount.length).to.equal(1);
       });
 
       it("is added to accounts list", async function() {
@@ -360,17 +347,12 @@ describe("EtherDivvy", function() {
         expect(await etherDivvy.total()).to.equal(0);
       });
 
-      it("sets numberOfPartipants to zero", async function() {
-        expect(await etherDivvy.numberOfPartipants()).to.equal(2);
-
-        await etherDivvy.openContributionWindow();
-        expect(await etherDivvy.numberOfPartipants()).to.equal(0);
-      });
-
       it("resets maxContribution to default", async function() {
         let defaultMax = ethers.utils.parseEther('10');
         let newMax = ethers.utils.parseEther('50');
 
+        // Cannot change max contribution when contribution window is open
+        // so we open the window to change the max and then close it.
         await etherDivvy.openContributionWindow();
         await etherDivvy.changeMaxContribution(newMax);
 
@@ -399,6 +381,13 @@ describe("EtherDivvy", function() {
 
         await etherDivvy.openContributionWindow();
         expect(await etherDivvy.getAccounts()).to.be.empty;
+      });
+
+      it("sets contributing account balances to zero", async function() {
+        await etherDivvy.openContributionWindow();
+
+        expect(await etherDivvy.getBalanceFor(acc1.address)).to.equal(0);
+        expect(await etherDivvy.getBalanceFor(acc2.address)).to.equal(0);
       });
     });
   });
