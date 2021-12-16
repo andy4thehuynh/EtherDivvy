@@ -30,7 +30,8 @@ contract EtherDivvy is Ownable {
      */
     using SafeMath for uint;
 
-    uint constant DEFAULT_MAX_CONTRIB = 10 ether;
+    uint constant DEFAULT_MAX_CONTRIBUTION = 10 ether;
+    uint constant CONTRIBUTION_WINDOW_IN_WEEKS = 2 weeks;
 
     uint public total; // total amount from contributing accounts
     uint public maxContribution; // maximum amount of ether for a contribution period
@@ -43,7 +44,7 @@ contract EtherDivvy is Ownable {
 
     constructor() {
         total = 0;
-        maxContribution = DEFAULT_MAX_CONTRIB;
+        maxContribution = DEFAULT_MAX_CONTRIBUTION;
         highestContribution = 0 ether;
         contributableAt = block.timestamp;
         withdrawable = false;
@@ -98,7 +99,7 @@ contract EtherDivvy is Ownable {
         }
 
         total = 0;
-        maxContribution = DEFAULT_MAX_CONTRIB;
+        maxContribution = DEFAULT_MAX_CONTRIBUTION;
         highestContribution = 0;
         withdrawable = false;
         delete accounts;
