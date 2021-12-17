@@ -31,7 +31,8 @@ contract EtherDivvy is Ownable {
     using SafeMath for uint;
 
     uint constant DEFAULT_MAX_CONTRIBUTION = 10 ether;
-    uint constant CONTRIBUTION_WINDOW_IN_WEEKS = 2 weeks;
+    uint constant WITHDRAWAL_WINDOW_IN_DAYS = 3 days;
+    uint constant CONTRIBUTION_WINDOW_IN_DAYS = 14 days;
 
     uint public total; // total amount from contributing accounts
     uint public maxContribution; // maximum amount of ether for a contribution period
@@ -88,14 +89,22 @@ contract EtherDivvy is Ownable {
     }
 
     function openWithdrawalWindow() external onlyOwner {
-        require (!withdrawable, 'Withdrawal window already open');
-        require (contributableAt + CONTRIBUTION_WINDOW_IN_WEEKS <= block.timestamp, 'Two weeks must pass before opening withdrawal window');
+        require(!withdrawable, 'Withdrawal window already open');
+        require(
+            contributableAt + CONTRIBUTION_WINDOW_IN_DAYS <= block.timestamp,
+            'Two weeks must pass before opening withdrawal window'
+        );
 
         withdrawable = true;
         withdrawableAt = block.timestamp;
     }
 
     function openContributionWindow() external onlyOwner {
+        require(
+            (block.timestamp >= withdrawableAt + getWithdrawalWindowInDays()),
+            'Three days must pass before opening contribution window'
+        );
+
         // Resets participating account balances to zero for next contribution window
         for (uint i; i < accounts.length; i += 1) {
             balances[accounts[i]] = 0;
@@ -109,11 +118,19 @@ contract EtherDivvy is Ownable {
         delete accounts;
     }
 
-    function getBalanceFor(address _address) external view returns (uint) {
+    function getBalanceFor(address _address) external view returns(uint) {
         return balances[_address];
     }
 
     function getAccounts() external view returns (address[] memory) {
         return accounts;
+    }
+
+    // Setting WITHDRAWAL_WINDOW_IN_DAYS to three days could result in current timme for the block
+    // (block.timestamp) having a higher value. This is because we're comparing seconds since
+    // unix epoch instead of primitive time. An additional day to WITHDRAWAL_WINDOW_IN_DAYS ensures
+    // three days has past.
+    function getWithdrawalWindowInDays() private view returns(uint) {
+        return WITHDRAWAL_WINDOW_IN_DAYS + 1 days;
     }
 }
