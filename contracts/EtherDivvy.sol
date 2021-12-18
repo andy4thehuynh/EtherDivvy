@@ -60,8 +60,8 @@ contract EtherDivvy is Ownable {
         }
 
         total = total.add(amount);
-        balances[msg.sender] = balances[msg.sender].add(amount);
         accounts.push(msg.sender);
+        balances[msg.sender] = balances[msg.sender].add(amount);
     }
 
     function withdraw() external {
@@ -71,8 +71,8 @@ contract EtherDivvy is Ownable {
             'Withdrawal window is closed. You have forfeited your funds if previously contributed'
         );
 
-        uint funds = total.div(accounts.length);
         balances[msg.sender] = 0;
+        uint funds = total.div(accounts.length);
 
         (bool success, bytes memory data) = msg.sender.call{value: funds}('');
         require(success, 'Something went wrong.. failed to send Ether');
@@ -128,11 +128,11 @@ contract EtherDivvy is Ownable {
 
     function setContributionWindowValues() private {
         total = 0;
-        maxContribution = DEFAULT_MAX_CONTRIBUTION;
-        highestContribution = 0 ether;
         withdrawable = false;
         withdrawableAt = 0;
         contributableAt = block.timestamp;
+        highestContribution = 0 ether;
+        maxContribution = DEFAULT_MAX_CONTRIBUTION;
     }
 
     /**
