@@ -73,6 +73,7 @@ contract EtherDivvy is Ownable {
         balances[msg.sender] = 0;
 
         (bool success, bytes memory data) = msg.sender.call{value: funds}("");
+        require(success, 'Something went wrong.. failed to send Ether');
     }
 
     function openWithdrawalWindow() external onlyOwner {

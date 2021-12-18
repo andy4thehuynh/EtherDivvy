@@ -365,7 +365,7 @@ describe("EtherDivvy", function() {
         expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
       });
 
-      it("reverts if under two weeks since contribution window opened", async function() {
+      it("throws an exception if under two weeks since contribution window opened", async function() {
         let underTwoWeeks = 13 * 24 * 60 * 60; // 13 days
 
         await ethers.provider.send("evm_increaseTime", [underTwoWeeks]);
@@ -399,7 +399,7 @@ describe("EtherDivvy", function() {
           expect(await etherDivvy.withdrawable()).to.equal(false);
         });
 
-        it("reverts with a message", async function() {
+        it("throws an exception with a message", async function() {
           await expect(
             etherDivvy.openContributionWindow()
           ).to.be.revertedWith('Contribution window is already open');
@@ -498,7 +498,7 @@ describe("EtherDivvy", function() {
           expect(await etherDivvy.getBalanceFor(acc2.address)).to.equal(0);
         });
 
-        it("reverts if under three days since withdrawal window opened", async function() {
+        it("throws an exception if under three days since withdrawal window opened", async function() {
           let underThreeDays = 2 * 24 * 60 * 60; // 2 days
 
           await ethers.provider.send("evm_increaseTime", [underThreeDays]);
@@ -509,7 +509,7 @@ describe("EtherDivvy", function() {
           ).to.be.revertedWith('Three days must pass before opening contribution window');
         });
 
-        it("reverts if three days since withdrawal window opened", async function() {
+        it("throw an exception if three days since withdrawal window opened", async function() {
           let threeDays = 3 * 24 * 60 * 60;
 
           await ethers.provider.send("evm_increaseTime", [threeDays]);
@@ -520,7 +520,7 @@ describe("EtherDivvy", function() {
           ).to.be.revertedWith('Three days must pass before opening contribution window');
         });
 
-        it("does not revert if over three days since withdrawal window opened", async function() {
+        it("does not throw an exception if over three days since withdrawal window opened", async function() {
           let overThreeDays = 4 * 24 * 60 * 60; // 4 days
 
           await ethers.provider.send("evm_increaseTime", [overThreeDays]);
