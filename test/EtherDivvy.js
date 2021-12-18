@@ -393,128 +393,143 @@ describe("EtherDivvy", function() {
 
     describe("#openContributionWindow", function() {
 
-      beforeEach(async() => {
-        await acc1.sendTransaction({
-          from: acc1.address,
-          to: etherDivvy.address,
-          value: ethers.utils.parseEther('1'),
+      describe("withdrawal window is closed", function() {
+
+        beforeEach(async() => {
+          expect(await etherDivvy.withdrawable()).to.equal(false);
         });
 
-        await acc2.sendTransaction({
-          from: acc2.address,
-          to: etherDivvy.address,
-          value: ethers.utils.parseEther('5'),
+        it("reverts with a message", async function() {
+          await expect(
+            etherDivvy.openContributionWindow()
+          ).to.be.revertedWith('Contribution window already open');
+        });
+      });
+
+      describe("withdrawal window is open", function() {
+
+        beforeEach(async() => {
+          await acc1.sendTransaction({
+            from: acc1.address,
+            to: etherDivvy.address,
+            value: ethers.utils.parseEther('1'),
+          });
+
+          await acc2.sendTransaction({
+            from: acc2.address,
+            to: etherDivvy.address,
+            value: ethers.utils.parseEther('5'),
+          });
+
+          await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openWithdrawalWindow();
         });
 
-        await ethers.provider.send("evm_increaseTime", [20 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openWithdrawalWindow();
-      });
+        it("sets total to zero", async function() {
+          expect(await etherDivvy.total()).to.equal(ethers.utils.parseEther('6'));
 
-      it("sets total to zero", async function() {
-        expect(await etherDivvy.total()).to.equal(ethers.utils.parseEther('6'));
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
+          expect(await etherDivvy.total()).to.equal(0);
+        });
 
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
-        expect(await etherDivvy.total()).to.equal(0);
-      });
+        it("resets maxContribution to default", async function() {
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
 
-      it("resets maxContribution to default", async function() {
-        let defaultMax = ethers.utils.parseEther('10');
-        let newMax = ethers.utils.parseEther('50');
+          expect(await etherDivvy.maxContribution()).to.equal(ethers.utils.parseEther('10'));
+        });
 
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        // Cannot change max contribution when contribution window is open
-        // so we open the window to change the max and then close it.
-        await etherDivvy.openContributionWindow();
-        await etherDivvy.changeMaxContribution(newMax);
+        it("sets highestContribution to zero", async function() {
+          expect(await etherDivvy.highestContribution()).to.equal(ethers.utils.parseEther('5'));
 
-        await etherDivvy.openWithdrawalWindow();
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
+          expect(await etherDivvy.highestContribution()).to.equal(0);
+        });
 
-        expect(await etherDivvy.maxContribution()).to.equal(defaultMax);
-      });
+        it("sets withdrawable to false", async function() {
+          expect(await etherDivvy.withdrawable()).to.equal(true);
 
-      it("sets highestContribution to zero", async function() {
-        expect(await etherDivvy.highestContribution()).to.equal(ethers.utils.parseEther('5'));
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
+          expect(await etherDivvy.withdrawable()).to.equal(false);
+        });
 
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
-        expect(await etherDivvy.highestContribution()).to.equal(0);
-      });
+        it("empties accounts list", async function() {
+          expect(await etherDivvy.getAccounts()).to.not.be.empty;
 
-      it("sets withdrawable to false", async function() {
-        expect(await etherDivvy.withdrawable()).to.equal(true);
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
+          expect(await etherDivvy.getAccounts()).to.be.empty;
+        });
 
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
-        expect(await etherDivvy.withdrawable()).to.equal(false);
-      });
+        it("sets withdrawableAt to zero", async function() {
+          expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
 
-      it("empties accounts list", async function() {
-        expect(await etherDivvy.getAccounts()).to.not.be.empty;
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
+          expect(await etherDivvy.withdrawableAt()).to.equal(0);
+        });
 
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
-        expect(await etherDivvy.getAccounts()).to.be.empty;
-      });
+        it("sets contributableAt timestamp", async function() {
+          let previous = await etherDivvy.contributableAt();
 
-      it("sets withdrawableAt to zero", async function() {
-        expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
 
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
-        expect(await etherDivvy.withdrawableAt()).to.equal(0);
-      });
+          expect(await etherDivvy.contributableAt()).to.not.equal(previous);
+        });
 
-      it("sets contributing account balances to zero", async function() {
-        await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
-        await ethers.provider.send("evm_mine");
-        await etherDivvy.openContributionWindow();
+        it("sets contributing account balances to zero", async function() {
+          await ethers.provider.send("evm_increaseTime", [4 * 24 * 60 * 60]);
+          await ethers.provider.send("evm_mine");
+          await etherDivvy.openContributionWindow();
 
-        expect(await etherDivvy.getBalanceFor(acc1.address)).to.equal(0);
-        expect(await etherDivvy.getBalanceFor(acc2.address)).to.equal(0);
-      });
+          expect(await etherDivvy.getBalanceFor(acc1.address)).to.equal(0);
+          expect(await etherDivvy.getBalanceFor(acc2.address)).to.equal(0);
+        });
 
-      it("reverts if under three days since withdrawal window opened", async function() {
-        let underThreeDays = 2 * 24 * 60 * 60; // 2 days
+        it("reverts if under three days since withdrawal window opened", async function() {
+          let underThreeDays = 2 * 24 * 60 * 60; // 2 days
 
-        await ethers.provider.send("evm_increaseTime", [underThreeDays]);
-        await ethers.provider.send("evm_mine");
+          await ethers.provider.send("evm_increaseTime", [underThreeDays]);
+          await ethers.provider.send("evm_mine");
 
-        await expect(
-          etherDivvy.openContributionWindow()
-        ).to.be.revertedWith('Three days must pass before opening contribution window');
-      });
+          await expect(
+            etherDivvy.openContributionWindow()
+          ).to.be.revertedWith('Three days must pass before opening contribution window');
+        });
 
-      it("reverts if three days since withdrawal window opened", async function() {
-        let threeDays = 3 * 24 * 60 * 60;
+        it("reverts if three days since withdrawal window opened", async function() {
+          let threeDays = 3 * 24 * 60 * 60;
 
-        await ethers.provider.send("evm_increaseTime", [threeDays]);
-        await ethers.provider.send("evm_mine");
+          await ethers.provider.send("evm_increaseTime", [threeDays]);
+          await ethers.provider.send("evm_mine");
 
-        await expect(
-          etherDivvy.openContributionWindow()
-        ).to.be.revertedWith('Three days must pass before opening contribution window');
-      });
+          await expect(
+            etherDivvy.openContributionWindow()
+          ).to.be.revertedWith('Three days must pass before opening contribution window');
+        });
 
-      it("does not revert if over three days since withdrawal window opened", async function() {
-        let overThreeDays = 4 * 24 * 60 * 60; // 4 days
+        it("does not revert if over three days since withdrawal window opened", async function() {
+          let overThreeDays = 4 * 24 * 60 * 60; // 4 days
 
-        await ethers.provider.send("evm_increaseTime", [overThreeDays]);
-        await ethers.provider.send("evm_mine");
+          await ethers.provider.send("evm_increaseTime", [overThreeDays]);
+          await ethers.provider.send("evm_mine");
 
-        await expect(
-          etherDivvy.openContributionWindow()
-        ).to.not.be.revertedWith('Three days must pass before opening contribution window');
+          await expect(
+            etherDivvy.openContributionWindow()
+          ).to.not.be.revertedWith('Three days must pass before opening contribution window');
+        });
       });
     });
   });

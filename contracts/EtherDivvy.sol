@@ -34,9 +34,9 @@ contract EtherDivvy is Ownable {
     uint constant WITHDRAWAL_WINDOW_IN_DAYS = 3 days;
     uint constant CONTRIBUTION_WINDOW_IN_DAYS = 14 days;
 
-    uint public total; // total amount from contributing accounts
-    uint public maxContribution; // maximum amount of ether for a contribution period
-    uint public highestContribution; // records highest so owner can't set maxContribution below
+    uint public total; // total amount from contributing accounts for a contribution window
+    uint public maxContribution; // maximum amount of ether an account can contribute
+    uint public highestContribution; // records highest contribution so owner can't set maxContribution below
     uint public contributableAt; // when contribution window starts
     uint public withdrawableAt; // when withdrawable window starts
 
@@ -100,6 +100,7 @@ contract EtherDivvy is Ownable {
     }
 
     function openContributionWindow() external onlyOwner {
+        require(withdrawable, 'Contribution window already open');
         require(
             (block.timestamp >= withdrawableAt + getWithdrawalWindowInDays()),
             'Three days must pass before opening contribution window'
@@ -112,7 +113,8 @@ contract EtherDivvy is Ownable {
 
         total = 0;
         maxContribution = DEFAULT_MAX_CONTRIBUTION;
-        highestContribution = 0;
+        highestContribution = 0 ether;
+        contributableAt = block.timestamp;
         withdrawable = false;
         withdrawableAt = 0;
         delete accounts;
@@ -122,7 +124,7 @@ contract EtherDivvy is Ownable {
         return balances[_address];
     }
 
-    function getAccounts() external view returns (address[] memory) {
+    function getAccounts() external view returns(address[] memory) {
         return accounts;
     }
 
