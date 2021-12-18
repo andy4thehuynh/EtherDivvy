@@ -42,6 +42,8 @@ contract EtherDivvy is Ownable {
     address[] public accounts; // a necessary list to reset balances of contributing accounts to zero
     mapping(address => uint) public balances; // tracks each account's contributions
 
+    event ChangeMaxContribution(uint amount);
+
     constructor() {
         setContributionWindowValues();
     }
@@ -72,7 +74,7 @@ contract EtherDivvy is Ownable {
         uint funds = total.div(accounts.length);
         balances[msg.sender] = 0;
 
-        (bool success, bytes memory data) = msg.sender.call{value: funds}("");
+        (bool success, bytes memory data) = msg.sender.call{value: funds}('');
         require(success, 'Something went wrong.. failed to send Ether');
     }
 
@@ -95,7 +97,7 @@ contract EtherDivvy is Ownable {
         );
 
         // Resets participating account balances to zero
-        for (uint i; i < accounts.length; i += 1) {
+        for (uint i = 0; i < accounts.length; i += 1) {
             balances[accounts[i]] = 0;
         }
 
@@ -103,19 +105,20 @@ contract EtherDivvy is Ownable {
         delete accounts;
     }
 
-    /// @param _amount in ETH to change how much an account can contribute
-    function changeMaxContribution(uint _amount) external onlyOwner {
+    /// @param amount in ETH to change how much an account can contribute
+    function changeMaxContribution(uint amount) external onlyOwner {
         require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
-        require(_amount >= highestContribution, 'Please set max contribution higher than highest contribution');
-        require(_amount > 0 ether, 'Please set max contribution higher than zero');
+        require(amount >= highestContribution, 'Please set max contribution higher than highest contribution');
+        require(amount > 0 ether, 'Please set max contribution higher than zero');
 
-        maxContribution = _amount;
+        maxContribution = amount;
+        emit ChangeMaxContribution(amount);
     }
 
-    /// @param _address Address of a partipating account
+    /// @param addr Address of a partipating account
     /// @return amount an address has contributed. Returns zero if account did not partipate
-    function getBalanceFor(address _address) external view returns(uint) {
-        return balances[_address];
+    function getBalanceFor(address addr) external view returns(uint) {
+        return balances[addr];
     }
 
     /// @return a list of partipating accounts for a contribution window
@@ -138,7 +141,7 @@ contract EtherDivvy is Ownable {
       Adding an additional day to WITHDRAWAL_WINDOW_IN_DAYS ensures the withdrawal window is more accurate.
     */
     /// @return withdrawal window in days
-    function getWithdrawalWindowInDays() private view returns(uint) {
+    function getWithdrawalWindowInDays() private pure returns(uint) {
         return WITHDRAWAL_WINDOW_IN_DAYS + 1 days;
     }
 }
