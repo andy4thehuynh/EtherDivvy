@@ -1,63 +1,54 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-/*
-   @title Allows accounts to contribute ether to this contract. The total
-   contributions will ultimately get dispersed to partipants evenly after
-   two weeks where the contribution window closes.
-
-   @author Andy Huynh
-
-   @notice Accounts can contribute ether until the max contribution limit has been reached.
-   The withdrawal window of three days allows partipants to pull their
-   ether invidually which avoids external calls failing accidentally. Failure to
-   pull ether within the withdrawal window results in forfeiting their share.
-
-   @dev Contract owners can set the max contribution limit above zero. If remaining
-   ether has not been withdrawn by all partipants, it stays in the contract.
-*/
-
 import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+/**
+   @title This smart contract accepts contributions in ETH. The grand total will be dispersed
+   evenly to participating accounts every two weeks. There will be a three day withdrawal period
+   for partipating accounts to withdraw their payouts.
 
+   @author Andy Huynh
+
+   @notice Accounts can contribute ether once per contribution window. This contract accepts
+   contributions upto the max contribution limit. If a partipaticipating account fails to withdraw
+   their funds during the withdrawal window, they will forfeit their ETH. The pulling of ether on
+   an individual basis avoids external calls failing accidentally. It is the responsibility of the
+   partipating account to withdraw their funds in a timely manner.
+
+   @dev Contract owners can set the max contribution limit to an amount above zero. Owners can also
+   transfer contract ownership to someone else. If remaining ether has not been withdrawn by all
+   partipants, it stays in the contract.
+*/
 contract EtherDivvy is Ownable {
-    /*
-       LOOM network recommends preventing overflow checks when performing
-       arithmetic operations
-     */
+     // LOOM network recommends preventing overflow checks when performing arithmetic operations
     using SafeMath for uint;
 
     uint constant DEFAULT_MAX_CONTRIBUTION = 10 ether;
     uint constant WITHDRAWAL_WINDOW_IN_DAYS = 3 days;
     uint constant CONTRIBUTION_WINDOW_IN_DAYS = 14 days;
 
-    uint public total; // total amount from contributing accounts for a contribution window
-    uint public maxContribution; // maximum amount of ether an account can contribute
-    uint public highestContribution; // records highest contribution so owner can't set maxContribution below
+    uint public total; // total amount by contributing accounts during a contribution window
+    uint public maxContribution; // maximum amount ETH accounts can contribute - owner can change this value
+    uint public highestContribution; // records highest so owner cannot set maxContribution value below it
     uint public contributableAt; // when contribution window starts
     uint public withdrawableAt; // when withdrawable window starts
 
-    bool public withdrawable; // keeps track when withdrawal window is open to pull funds
-    address[] public accounts; // needed to set balances of contributing accounts to zero
-    mapping(address => uint) public balances; // tracks amount each account has contributed
+    bool public withdrawable; // for opening and closing withdrawal window
+    address[] public accounts; // a necessary list to reset balances of contributing accounts to zero
+    mapping(address => uint) public balances; // tracks each account's contributions
 
     constructor() {
-        total = 0;
-        maxContribution = DEFAULT_MAX_CONTRIBUTION;
-        highestContribution = 0 ether;
-        contributableAt = block.timestamp;
-        withdrawableAt = 0;
-        withdrawable = false;
+        setContributionWindowValues();
     }
 
     receive() external payable {
-        // we check if an account balance is zero to determine if they've contributed
-        require(0 == balances[msg.sender], 'Cannot contribute more than once per contribution window');
-        require(msg.value <= maxContribution, 'Cannot exceed maximum contribution limit');
-        require(!withdrawable, 'Withdrawal window is open - cannot contribute right now');
+        require(0 == balances[msg.sender], 'An account can only contribute once per contribution period');
+        require(msg.value <= maxContribution, 'Exceeds maximum contribution limit');
+        require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
 
         uint amount = msg.value;
 
@@ -71,8 +62,11 @@ contract EtherDivvy is Ownable {
     }
 
     function withdraw() external {
-        require(withdrawable, 'Withdrawal window open - cannot change max contribution');
-        require(balances[msg.sender] != 0, 'Account did not contribute - cannot withdraw funds');
+        require(balances[msg.sender] != 0, 'Acting account did not contribute during contribution window');
+        require(
+            withdrawable,
+            'Withdrawal window is closed. You have forfeited your funds if previously contributed'
+        );
 
         uint funds = total.div(accounts.length);
         balances[msg.sender] = 0;
@@ -81,15 +75,15 @@ contract EtherDivvy is Ownable {
     }
 
     function changeMaxContribution(uint _amount) external onlyOwner {
-        require(!withdrawable, 'Withdrawal window open - cannot change max contribution');
-        require(_amount >= highestContribution, 'Cannot set max contribution lower than highest contribution');
-        require(_amount > 0 ether, 'Cannot set max contribution to zero');
+        require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
+        require(_amount >= highestContribution, 'Please set max contribution higher than highest contribution');
+        require(_amount > 0 ether, 'Please set max contribution higher than zero');
 
         maxContribution = _amount;
     }
 
     function openWithdrawalWindow() external onlyOwner {
-        require(!withdrawable, 'Withdrawal window already open');
+        require(!withdrawable, 'Withdrawal window is already open');
         require(
             contributableAt + CONTRIBUTION_WINDOW_IN_DAYS <= block.timestamp,
             'Two weeks must pass before opening withdrawal window'
@@ -100,7 +94,7 @@ contract EtherDivvy is Ownable {
     }
 
     function openContributionWindow() external onlyOwner {
-        require(withdrawable, 'Contribution window already open');
+        require(withdrawable, 'Contribution window is already open');
         require(
             (block.timestamp >= withdrawableAt + getWithdrawalWindowInDays()),
             'Three days must pass before opening contribution window'
@@ -111,12 +105,7 @@ contract EtherDivvy is Ownable {
             balances[accounts[i]] = 0;
         }
 
-        total = 0;
-        maxContribution = DEFAULT_MAX_CONTRIBUTION;
-        highestContribution = 0 ether;
-        contributableAt = block.timestamp;
-        withdrawable = false;
-        withdrawableAt = 0;
+        setContributionWindowValues();
         delete accounts;
     }
 
@@ -134,5 +123,14 @@ contract EtherDivvy is Ownable {
     // three days has past.
     function getWithdrawalWindowInDays() private view returns(uint) {
         return WITHDRAWAL_WINDOW_IN_DAYS + 1 days;
+    }
+
+    function setContributionWindowValues() private {
+        total = 0;
+        maxContribution = DEFAULT_MAX_CONTRIBUTION;
+        highestContribution = 0 ether;
+        withdrawable = false;
+        withdrawableAt = 0;
+        contributableAt = block.timestamp;
     }
 }

@@ -97,7 +97,7 @@ describe("EtherDivvy", function() {
             to: etherDivvy.address,
             value: ethers.utils.parseEther('1'),
           })
-        ).to.be.revertedWith('Withdrawal window is open - cannot contribute right now');
+        ).to.be.revertedWith('Withdrawal window is open. Please wait until next contribution window');
       });
 
       it("contributes multiple times during a contribution window", async function() {
@@ -113,7 +113,7 @@ describe("EtherDivvy", function() {
             to: etherDivvy.address,
             value: ethers.utils.parseEther('2'),
           })
-        ).to.be.revertedWith('Cannot contribute more than once per contribution window');
+        ).to.be.revertedWith('An account can only contribute once per contribution period');
       });
 
       it("contributes more than max contribution", async function() {
@@ -128,7 +128,7 @@ describe("EtherDivvy", function() {
             to: etherDivvy.address,
             value: higherContribution,
           })
-        ).to.be.revertedWith('Cannot exceed maximum contribution limit');
+        ).to.be.revertedWith('Exceeds maximum contribution limit');
       });
     });
   });
@@ -195,7 +195,7 @@ describe("EtherDivvy", function() {
 
         await expect(
           etherDivvy.connect(acc1).withdraw()
-        ).to.be.revertedWith('Withdrawal window open - cannot change max contribution');
+        ).to.be.revertedWith('Withdrawal window is closed. You have forfeited your funds if previously contributed');
       });
 
       it("did not contribute any ether", async function() {
@@ -206,7 +206,7 @@ describe("EtherDivvy", function() {
         await etherDivvy.openWithdrawalWindow();
         await expect(
           etherDivvy.connect(acc2).withdraw()
-        ).to.be.revertedWith('Account did not contribute - cannot withdraw funds');
+        ).to.be.revertedWith('Acting account did not contribute during contribution window');
       });
     });
   });
@@ -306,7 +306,7 @@ describe("EtherDivvy", function() {
 
       await expect(
         etherDivvy.openWithdrawalWindow()
-      ).to.be.revertedWith('Withdrawal window already open');
+      ).to.be.revertedWith('Withdrawal window is already open');
     });
 
     it("cannot change max contribution when withdrawal window is open", async function() {
@@ -316,7 +316,7 @@ describe("EtherDivvy", function() {
 
       await expect(
         etherDivvy.changeMaxContribution(ethers.utils.parseEther('1'))
-      ).to.be.revertedWith('Withdrawal window open - cannot change max contribution');
+      ).to.be.revertedWith('Withdrawal window is open. Please wait until next contribution window');
     });
 
     it("cannot change max contribution to zero ether", async function() {
@@ -324,7 +324,7 @@ describe("EtherDivvy", function() {
 
       await expect(
         etherDivvy.changeMaxContribution(invalidMax)
-      ).to.be.revertedWith('Cannot set max contribution to zero');
+      ).to.be.revertedWith('Please set max contribution higher than zero');
     });
 
     it("cannot change max contribution lower than highestContribution", async function() {
@@ -341,7 +341,7 @@ describe("EtherDivvy", function() {
 
       await expect(
         etherDivvy.changeMaxContribution(newMax)
-      ).to.be.revertedWith('Cannot set max contribution lower than highest contribution');
+      ).to.be.revertedWith('Please set max contribution higher than highest contribution');
     });
 
 
@@ -402,7 +402,7 @@ describe("EtherDivvy", function() {
         it("reverts with a message", async function() {
           await expect(
             etherDivvy.openContributionWindow()
-          ).to.be.revertedWith('Contribution window already open');
+          ).to.be.revertedWith('Contribution window is already open');
         });
       });
 
