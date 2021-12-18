@@ -6,6 +6,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+
 /**
    @title This smart contract accepts contributions in ETH. The grand total will be dispersed
    evenly to participating accounts every two weeks. There will be a three day withdrawal period
@@ -74,14 +75,6 @@ contract EtherDivvy is Ownable {
         (bool success, bytes memory data) = msg.sender.call{value: funds}("");
     }
 
-    function changeMaxContribution(uint _amount) external onlyOwner {
-        require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
-        require(_amount >= highestContribution, 'Please set max contribution higher than highest contribution');
-        require(_amount > 0 ether, 'Please set max contribution higher than zero');
-
-        maxContribution = _amount;
-    }
-
     function openWithdrawalWindow() external onlyOwner {
         require(!withdrawable, 'Withdrawal window is already open');
         require(
@@ -100,7 +93,7 @@ contract EtherDivvy is Ownable {
             'Three days must pass before opening contribution window'
         );
 
-        // Resets participating account balances to zero for next contribution window
+        // Resets participating account balances to zero
         for (uint i; i < accounts.length; i += 1) {
             balances[accounts[i]] = 0;
         }
@@ -109,20 +102,24 @@ contract EtherDivvy is Ownable {
         delete accounts;
     }
 
+    /// @param _amount in ETH to change how much an account can contribute
+    function changeMaxContribution(uint _amount) external onlyOwner {
+        require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
+        require(_amount >= highestContribution, 'Please set max contribution higher than highest contribution');
+        require(_amount > 0 ether, 'Please set max contribution higher than zero');
+
+        maxContribution = _amount;
+    }
+
+    /// @param _address Address of a partipating account
+    /// @return amount an address has contributed. Returns zero if account did not partipate
     function getBalanceFor(address _address) external view returns(uint) {
         return balances[_address];
     }
 
+    /// @return a list of partipating accounts for a contribution window
     function getAccounts() external view returns(address[] memory) {
         return accounts;
-    }
-
-    // Setting WITHDRAWAL_WINDOW_IN_DAYS to three days could result in current timme for the block
-    // (block.timestamp) having a higher value. This is because we're comparing seconds since
-    // unix epoch instead of primitive time. An additional day to WITHDRAWAL_WINDOW_IN_DAYS ensures
-    // three days has past.
-    function getWithdrawalWindowInDays() private view returns(uint) {
-        return WITHDRAWAL_WINDOW_IN_DAYS + 1 days;
     }
 
     function setContributionWindowValues() private {
@@ -132,5 +129,15 @@ contract EtherDivvy is Ownable {
         withdrawable = false;
         withdrawableAt = 0;
         contributableAt = block.timestamp;
+    }
+
+    /**
+      @dev Comparing WITHDRAWAL_WINDOW_IN_DAYS to a block's timestamp could result in the block
+      having a higher value if it's the same day. This is because we're dealing with days in seconds.
+      Adding an additional day to WITHDRAWAL_WINDOW_IN_DAYS ensures the withdrawal window is more accurate.
+    */
+    /// @return withdrawal window in days
+    function getWithdrawalWindowInDays() private view returns(uint) {
+        return WITHDRAWAL_WINDOW_IN_DAYS + 1 days;
     }
 }
