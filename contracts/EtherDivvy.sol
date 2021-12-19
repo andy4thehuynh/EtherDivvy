@@ -8,19 +8,19 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 /**
-   @title This smart contract accepts contributions in ETH. The grand total will be dispersed
-   evenly to participating accounts every two weeks. There will be a three day withdrawal period
-   for partipating accounts to withdraw their payouts.
+   @title This contract accepts contributions in ETH. Accounts have a contribution window of two
+   weeks. When the contribution window closes, the grand total will be dispersed evenly amongst
+   participating accounts. There will be a three day withdrawal window where partipating accounts
+   can pull their funds from the contract.
 
    @author Andy Huynh
 
    @notice Accounts can contribute ether once per contribution window. This contract accepts
-   contributions upto the max contribution limit. If a partipaticipating account fails to withdraw
-   their funds during the withdrawal window, they will forfeit their ETH. The pulling of ether on
-   an individual basis avoids external calls failing accidentally. It is the responsibility of the
-   partipating account to withdraw their funds in a timely manner.
+   contributions upto the max contribution limit. Failure to withdraw funds during the withdrawal
+   window will result in forfeiting their ETH. It is the responsibility of partipating accounts to
+   withdraw their funds in a timely manner.
 
-   @dev Contract owners can set the max contribution limit to an amount above zero. Owners can also
+   @dev Contract owners can change the max contribution limit to an amount above zero. Owners can also
    transfer contract ownership to someone else. If remaining ether has not been withdrawn by all
    partipants, it stays in the contract.
 */
@@ -39,7 +39,7 @@ contract EtherDivvy is Ownable {
     uint public withdrawableAt; // when withdrawable window starts
 
     bool public withdrawable; // for opening and closing withdrawal window
-    address[] public accounts; // a necessary list to reset balances of contributing accounts to zero
+    address[] public accounts; // a list to reset balances of contributing accounts to zero
     mapping(address => uint) public balances; // tracks each account's contributions
 
     event ChangeMaxContribution(uint amount);
@@ -49,7 +49,7 @@ contract EtherDivvy is Ownable {
     }
 
     receive() external payable {
-        require(0 == balances[msg.sender], 'An account can only contribute once per contribution period');
+        require(0 == balances[msg.sender], 'An account can only contribute once per contribution window');
         require(msg.value <= maxContribution, 'Exceeds maximum contribution limit');
         require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
 
@@ -68,7 +68,7 @@ contract EtherDivvy is Ownable {
         require(balances[msg.sender] != 0, 'Acting account did not contribute during contribution window');
         require(
             withdrawable,
-            'Withdrawal window is closed. You have forfeited your funds if previously contributed'
+            'Withdrawal window is closed. You have forfeited funds if previously contributed'
         );
 
         balances[msg.sender] = 0;
