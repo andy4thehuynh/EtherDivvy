@@ -150,6 +150,37 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.getBalanceFor(account2.address)).to.equal(0);
     });
   });
+
+  describe("#openWithdrawalWindow", function() {
+    it("throws an exception when owner opens withdrawal window before 14 days has past", async function() {
+      helpers.timeTravel(13);
+
+      await expect(
+        etherDivvy.openWithdrawalWindow()
+      ).to.be.revertedWith("Two weeks must pass before opening withdrawal window");
+    });
+
+    it("throws an exception when owner opens withdrawal window after its already open", async function() {
+      helpers.timeTravel(14);
+      await etherDivvy.openWithdrawalWindow();
+      expect(await etherDivvy.withdrawable()).to.equal(true);
+
+      await expect(
+        etherDivvy.openWithdrawalWindow()
+      ).to.be.revertedWith("Withdrawal window is already open");
+    });
+
+    it("owner can open withdrawal window after 14 days", async function() {
+      expect(await etherDivvy.withdrawable()).to.equal(false);
+      expect(await etherDivvy.withdrawableAt()).to.equal(0);
+
+      helpers.timeTravel(14);
+      await etherDivvy.openWithdrawalWindow();
+
+      expect(await etherDivvy.withdrawable()).to.equal(true);
+      expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
+    });
+  });
 });
 
 describe("EtherDivvy", function() {

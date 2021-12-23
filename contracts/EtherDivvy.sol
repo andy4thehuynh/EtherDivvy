@@ -73,11 +73,10 @@ contract EtherDivvy is Ownable {
     }
 
     function openWithdrawalWindow() external onlyOwner {
+        bool canWithdraw = contributableAt + CONTRIBUTION_WINDOW_IN_DAYS <= block.timestamp;
+
+        require(canWithdraw, "Two weeks must pass before opening withdrawal window");
         require(!withdrawable, "Withdrawal window is already open");
-        require(
-            contributableAt + CONTRIBUTION_WINDOW_IN_DAYS <= block.timestamp,
-            "Two weeks must pass before opening withdrawal window"
-        );
 
         withdrawable = true;
         withdrawableAt = block.timestamp;
