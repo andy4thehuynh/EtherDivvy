@@ -2,9 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 
 /**
    @title This contract accepts contributions in ETH. Accounts have a contribution window of two
@@ -45,9 +43,9 @@ contract EtherDivvy is Ownable {
     }
 
     receive() external payable {
-        require(0 == balances[msg.sender], 'An account can only contribute once per contribution window');
-        require(msg.value <= maxContribution, 'Exceeds maximum contribution limit');
-        require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
+        require(0 == balances[msg.sender], "An account can only contribute once per contribution window");
+        require(msg.value <= maxContribution, "Exceeds maximum contribution limit");
+        require(!withdrawable, "Withdrawal window is open. Please wait until next contribution window");
 
         uint amount = msg.value;
 
@@ -61,24 +59,24 @@ contract EtherDivvy is Ownable {
     }
 
     function withdraw() external {
-        require(balances[msg.sender] != 0, 'Acting account did not contribute during contribution window');
+        require(balances[msg.sender] != 0, "Acting account did not contribute during contribution window");
         require(
             withdrawable,
-            'Withdrawal window is closed. You have forfeited funds if previously contributed'
+            "Withdrawal window is closed. You have forfeited funds if previously contributed"
         );
 
         balances[msg.sender] = 0;
         uint funds = total / accounts.length;
 
         (bool success, bytes memory data) = msg.sender.call{value: funds}('');
-        require(success, 'Something went wrong.. failed to send Ether');
+        require(success, "Something went wrong.. failed to send Ether");
     }
 
     function openWithdrawalWindow() external onlyOwner {
-        require(!withdrawable, 'Withdrawal window is already open');
+        require(!withdrawable, "Withdrawal window is already open");
         require(
             contributableAt + CONTRIBUTION_WINDOW_IN_DAYS <= block.timestamp,
-            'Two weeks must pass before opening withdrawal window'
+            "Two weeks must pass before opening withdrawal window"
         );
 
         withdrawable = true;
@@ -86,10 +84,10 @@ contract EtherDivvy is Ownable {
     }
 
     function openContributionWindow() external onlyOwner {
-        require(withdrawable, 'Contribution window is already open');
+        require(withdrawable, "Contribution window is already open");
         require(
             (block.timestamp >= withdrawableAt + getWithdrawalWindowInDays()),
-            'Three days must pass before opening contribution window'
+            "Three days must pass before opening contribution window"
         );
 
         // Resets participating account balances to zero
@@ -103,9 +101,9 @@ contract EtherDivvy is Ownable {
 
     /// @param amount in ETH to change how much an account can contribute
     function changeMaxContribution(uint amount) external onlyOwner {
-        require(!withdrawable, 'Withdrawal window is open. Please wait until next contribution window');
-        require(amount >= highestContribution, 'Please set max contribution higher than highest contribution');
-        require(amount > 0 ether, 'Please set max contribution higher than zero');
+        require(!withdrawable, "Withdrawal window is open. Please wait until next contribution window");
+        require(amount >= highestContribution, "Please set max contribution higher than highest contribution");
+        require(amount > 0 ether, "Please set max contribution higher than zero");
 
         maxContribution = amount;
         emit ChangeMaxContribution(amount);
@@ -131,13 +129,8 @@ contract EtherDivvy is Ownable {
         maxContribution = DEFAULT_MAX_CONTRIBUTION;
     }
 
-    /**
-      @dev Comparing WITHDRAWAL_WINDOW_IN_DAYS to a block's timestamp could result in the block
-      having a higher value if it's the same day. This is because we're dealing with days in seconds.
-      Adding an additional day to WITHDRAWAL_WINDOW_IN_DAYS ensures the withdrawal window is more accurate.
-    */
     /// @return withdrawal window in days
     function getWithdrawalWindowInDays() private pure returns(uint) {
-        return WITHDRAWAL_WINDOW_IN_DAYS + 1 days;
+        return WITHDRAWAL_WINDOW_IN_DAYS;
     }
 }
