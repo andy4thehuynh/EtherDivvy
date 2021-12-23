@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 /**
@@ -25,9 +24,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
    partipants, it stays in the contract.
 */
 contract EtherDivvy is Ownable {
-     // LOOM network recommends preventing overflow checks when performing arithmetic operations
-    using SafeMath for uint;
-
     uint constant DEFAULT_MAX_CONTRIBUTION = 10 ether;
     uint constant WITHDRAWAL_WINDOW_IN_DAYS = 3 days;
     uint constant CONTRIBUTION_WINDOW_IN_DAYS = 14 days;
@@ -59,9 +55,9 @@ contract EtherDivvy is Ownable {
             highestContribution = amount;
         }
 
-        total = total.add(amount);
+        total = total + amount;
         accounts.push(msg.sender);
-        balances[msg.sender] = balances[msg.sender].add(amount);
+        balances[msg.sender] = balances[msg.sender] + amount;
     }
 
     function withdraw() external {
@@ -72,7 +68,7 @@ contract EtherDivvy is Ownable {
         );
 
         balances[msg.sender] = 0;
-        uint funds = total.div(accounts.length);
+        uint funds = total / accounts.length;
 
         (bool success, bytes memory data) = msg.sender.call{value: funds}('');
         require(success, 'Something went wrong.. failed to send Ether');
