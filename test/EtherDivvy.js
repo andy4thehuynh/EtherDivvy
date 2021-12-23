@@ -33,7 +33,7 @@ describe("EtherDivvy", function() {
       ).to.be.revertedWith("An account can only contribute once per contribution window");
     });
 
-    it("throws an exception when an account contributes more than the max contribution limit", async function() {
+    it("throws an exception when an account contributes more than max contribution limit", async function() {
       let max = await etherDivvy.maxContribution();
       let contribution = ethers.utils.parseEther("11");
 
@@ -48,7 +48,7 @@ describe("EtherDivvy", function() {
       ).to.be.revertedWith("Exceeds maximum contribution limit");
     });
 
-    it("throws an exception when an account contributes during withdrawal window", async function() {
+    it("throws an exception for an account contributing when withdrawal window is open", async function() {
       helpers.timeTravel(15);
 
       await etherDivvy.openWithdrawalWindow();
@@ -65,7 +65,7 @@ describe("EtherDivvy", function() {
       );
     });
 
-    it("accounts can contributes ether to the contract", async function() {
+    it("accounts can contribute ether to the contract", async function() {
       let amount1 = ethers.utils.parseEther("5");
       let amount2 = ethers.utils.parseEther("6");
       let total = ethers.utils.parseEther("11");
@@ -92,6 +92,62 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.getAccounts()).to.include.members([account1.address, account2.address]);
       expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(amount1);
       expect(await etherDivvy.getBalanceFor(account2.address)).to.equal(amount2);
+    });
+  });
+
+  describe("#withdraw", function() {
+    it("throws an exception for an account that did not contribute ether", async function() {
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
+
+      helpers.timeTravel(20);
+
+      await etherDivvy.openWithdrawalWindow();
+      await expect(
+        etherDivvy.connect(account1).withdraw()
+      ).to.be.revertedWith("Acting account did not contribute during contribution window");
+    });
+
+    it("throws an exception for an account withdrawing before 14 days has passed", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("5"),
+      });
+
+      helpers.timeTravel(13);
+      expect(await etherDivvy.withdrawable()).to.equal(false);
+
+      await expect(
+        etherDivvy.connect(account1).withdraw()
+      ).to.be.revertedWith(
+        "Withdrawal window is closed. You have forfeited funds if previously contributed"
+      );
+    });
+
+    it("partipating accounts can withdraw ether from the contract", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("8")
+      });
+      await account2.sendTransaction({
+        from: account2.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("4")
+      });
+
+      helpers.timeTravel(14); // 14 days has passed and withdrawal window opens
+
+      await etherDivvy.openWithdrawalWindow();
+      expect(await etherDivvy.withdrawable()).to.equal(true);
+
+      expect(await etherDivvy.connect(account1).withdraw())
+        .to.changeEtherBalance(account1, ethers.utils.parseEther("6"));
+      expect(await etherDivvy.connect(account2).withdraw())
+        .to.changeEtherBalance(account2, ethers.utils.parseEther("6"));
+
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
+      expect(await etherDivvy.getBalanceFor(account2.address)).to.equal(0);
     });
   });
 });
