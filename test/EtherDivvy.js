@@ -16,6 +16,100 @@ describe("EtherDivvy", function() {
     etherDivvy = await EtherDivvy.deploy();
   });
 
+  describe("#receive", function() {
+    it("throws an exception when an account contributes multiple times", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("1"),
+      });
+
+      await expect(
+        account1.sendTransaction({
+          from: account1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther("2"),
+        })
+      ).to.be.revertedWith("An account can only contribute once per contribution window");
+    });
+
+    it("throws an exception when an account contributes more than the max contribution limit", async function() {
+      let max = await etherDivvy.maxContribution();
+      let contribution = ethers.utils.parseEther("11");
+
+      expect(max).to.be.below(contribution);
+
+      await expect(
+        account1.sendTransaction({
+          from: account1.address,
+          to: etherDivvy.address,
+          value: contribution,
+        })
+      ).to.be.revertedWith("Exceeds maximum contribution limit");
+    });
+
+    it("throws an exception when an account contributes during withdrawal window", async function() {
+      helpers.timeTravel(15);
+
+      await etherDivvy.openWithdrawalWindow();
+      expect(await etherDivvy.withdrawable()).to.equal(true);
+
+      await expect(
+        account1.sendTransaction({
+          from: account1.address,
+          to: etherDivvy.address,
+          value: ethers.utils.parseEther("1"),
+        })
+      ).to.be.revertedWith(
+        "Withdrawal window is open. Please wait until next contribution window"
+      );
+    });
+
+    it("accounts can contributes ether to the contract", async function() {
+      let amount1 = ethers.utils.parseEther("5");
+      let amount2 = ethers.utils.parseEther("6");
+      let total = ethers.utils.parseEther("11");
+
+      expect(await etherDivvy.total()).to.equal(0);
+      expect(await etherDivvy.highestContribution()).to.equal(0);
+      expect(await etherDivvy.getAccounts()).to.be.empty;
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
+      expect(await etherDivvy.getBalanceFor(account2.address)).to.equal(0);
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: amount1,
+      });
+      await account2.sendTransaction({
+        from: account2.address,
+        to: etherDivvy.address,
+        value: amount2,
+      });
+
+      expect(await etherDivvy.total()).to.equal(total);
+      expect(await etherDivvy.highestContribution()).to.equal(amount2);
+      expect(await etherDivvy.getAccounts()).to.include.members([account1.address, account2.address]);
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(amount1);
+      expect(await etherDivvy.getBalanceFor(account2.address)).to.equal(amount2);
+    });
+  });
+});
+
+describe("EtherDivvy", function() {
+  let owner;
+  let account1;
+  let account2;
+  let account3;
+  let EtherDivvy;
+  let etherDivvy;
+
+  beforeEach(async() => {
+    [owner, account1, account2, account3] = await ethers.getSigners();
+    EtherDivvy = await ethers.getContractFactory("EtherDivvy");
+    etherDivvy = await EtherDivvy.deploy();
+  });
+
 
   describe("when an account contributes ether", function() {
 
