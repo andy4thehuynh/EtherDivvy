@@ -227,6 +227,58 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.getAccounts()).to.be.empty;
     });
   });
+
+  describe("#changeMaxContribution", function() {
+    it("owner cannot change max contribution when withdrawal window is open", async function() {
+      // mocks initial contribution window of 14 days and opens withdrawal window
+      helpers.timeTravel(14);
+      await etherDivvy.openWithdrawalWindow();
+
+      await expect(
+        etherDivvy.changeMaxContribution(ethers.utils.parseEther("1"))
+      ).to.be.revertedWith(
+        "Please wait until next contribution window to change max contribution"
+      );
+    });
+
+    it("owner cannot change max contribution lower than highestContribution", async function() {
+      let highestContribution = ethers.utils.parseEther("9");
+      let newMax = ethers.utils.parseEther("1");
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: highestContribution,
+      });
+
+      expect(await etherDivvy.highestContribution()).to.equal(highestContribution);
+
+      await expect(
+        etherDivvy.changeMaxContribution(newMax)
+      ).to.be.revertedWith("Please set max contribution higher than highest contribution");
+    });
+
+    it("owner cannot change max contribution to zero ether", async function() {
+      const invalidMax = ethers.utils.parseEther("0");
+
+      await expect(
+        etherDivvy.changeMaxContribution(invalidMax)
+      ).to.be.revertedWith("Please set max contribution higher than zero");
+    });
+
+    it("owner can change max contribution", async function() {
+      const oldMax = ethers.utils.parseEther("10");
+      const newMax = ethers.utils.parseEther("50");
+
+      expect(await etherDivvy.maxContribution()).to.equal(oldMax);
+
+      await expect(etherDivvy.changeMaxContribution(newMax))
+        .to.emit(etherDivvy, "ChangeMaxContribution")
+        .withArgs(newMax);
+
+      expect(await etherDivvy.maxContribution()).to.equal(newMax);
+    });
+  });
 });
 
 describe("EtherDivvy", function() {

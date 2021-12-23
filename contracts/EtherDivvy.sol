@@ -99,7 +99,7 @@ contract EtherDivvy is Ownable {
 
     /// @param amount in ETH to change how much an account can contribute
     function changeMaxContribution(uint amount) external onlyOwner {
-        require(!withdrawable, "Withdrawal window is open. Please wait until next contribution window");
+        require(!withdrawable, "Please wait until next contribution window to change max contribution");
         require(amount >= highestContribution, "Please set max contribution higher than highest contribution");
         require(amount > 0 ether, "Please set max contribution higher than zero");
 
