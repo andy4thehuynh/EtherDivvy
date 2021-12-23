@@ -83,11 +83,10 @@ contract EtherDivvy is Ownable {
     }
 
     function openContributionWindow() external onlyOwner {
+        bool canContribute =  withdrawableAt + WITHDRAWAL_WINDOW_IN_DAYS <= block.timestamp;
+
+        require(canContribute, "Three days must pass before opening contribution window");
         require(withdrawable, "Contribution window is already open");
-        require(
-            (block.timestamp >= withdrawableAt + getWithdrawalWindowInDays()),
-            "Three days must pass before opening contribution window"
-        );
 
         // Resets participating account balances to zero
         for (uint i = 0; i < accounts.length; i += 1) {
@@ -126,10 +125,5 @@ contract EtherDivvy is Ownable {
         contributableAt = block.timestamp;
         highestContribution = 0 ether;
         maxContribution = DEFAULT_MAX_CONTRIBUTION;
-    }
-
-    /// @return withdrawal window in days
-    function getWithdrawalWindowInDays() private pure returns(uint) {
-        return WITHDRAWAL_WINDOW_IN_DAYS;
     }
 }

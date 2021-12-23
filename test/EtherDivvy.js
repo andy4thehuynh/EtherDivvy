@@ -170,15 +170,61 @@ describe("EtherDivvy", function() {
       ).to.be.revertedWith("Withdrawal window is already open");
     });
 
-    it("owner can open withdrawal window after 14 days", async function() {
-      expect(await etherDivvy.withdrawable()).to.equal(false);
-      expect(await etherDivvy.withdrawableAt()).to.equal(0);
-
+    it("owner can open withdrawal window after 14 days since opening contribution window", async function() {
+      // mocks initial contribution window of 14 days and opens withdrawal window
       helpers.timeTravel(14);
       await etherDivvy.openWithdrawalWindow();
 
       expect(await etherDivvy.withdrawable()).to.equal(true);
       expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
+    });
+  });
+
+  describe("#openContributionWindow", function() {
+    it("throws an exception when owner opens contribution window after its already open", async function() {
+      expect(await etherDivvy.withdrawable()).to.equal(false); // cannot withdraw, so only able to contribute
+
+      await expect(
+        etherDivvy.openContributionWindow()
+      ).to.be.revertedWith("Contribution window is already open");
+    });
+
+    it("throws an when owner opens contribution window before three days has past", async function() {
+      // mocks initial contribution window of 14 days and opens withdrawal window
+      helpers.timeTravel(14);
+      await etherDivvy.openWithdrawalWindow();
+
+      helpers.timeTravel(2);
+
+      await expect(
+        etherDivvy.openContributionWindow()
+      ).to.be.revertedWith('Three days must pass before opening contribution window');
+    });
+
+    it("owner can open contribution window after 3 days since opening withdrawal window", async function() {
+      // create a transaction to ensure their balance is zero'd out when opening contribution window
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("8")
+      });
+
+      // mocks initial contribution window of 14 days and opens withdrawal window
+      helpers.timeTravel(14);
+      await etherDivvy.openWithdrawalWindow();
+
+      helpers.timeTravel(3);
+
+      await etherDivvy.openContributionWindow();
+
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
+      expect(await etherDivvy.total()).to.equal(0);
+      expect(await etherDivvy.withdrawable()).to.equal(false);
+      expect(await etherDivvy.withdrawableAt()).to.equal(0);
+      expect(await etherDivvy.contributableAt()).to.not.equal(0);
+      expect(await etherDivvy.highestContribution()).to.equal(0);
+      expect(await etherDivvy.maxContribution()).to.equal(ethers.utils.parseEther("10"));
+      expect(await etherDivvy.getAccounts()).to.be.empty;
     });
   });
 });
