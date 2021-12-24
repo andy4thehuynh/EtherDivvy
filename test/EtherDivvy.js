@@ -16,6 +16,7 @@ describe("EtherDivvy", function() {
     etherDivvy = await EtherDivvy.deploy();
   });
 
+
   it("assigns owner to contract deployer's address", async function(){
     expect(await etherDivvy.owner()).to.equal(owner.address);
   });
@@ -49,9 +50,9 @@ describe("EtherDivvy", function() {
 
   describe("#receive", function() {
     it("accounts can contribute ether to the contract", async function() {
-      let amount1 = ethers.utils.parseEther("5");
-      let amount2 = ethers.utils.parseEther("6");
-      let total = ethers.utils.parseEther("11");
+      const amount1 = ethers.utils.parseEther("5");
+      const amount2 = ethers.utils.parseEther("6");
+      const total = ethers.utils.parseEther("11");
 
       expect(await etherDivvy.total()).to.equal(0);
       expect(await etherDivvy.highestContribution()).to.equal(0);
@@ -94,8 +95,8 @@ describe("EtherDivvy", function() {
     });
 
     it("throws an exception when an account contributes more than max contribution limit", async function() {
-      let max = await etherDivvy.maxContribution();
-      let contribution = ethers.utils.parseEther("11");
+      const max = await etherDivvy.maxContribution();
+      const contribution = ethers.utils.parseEther("11");
 
       expect(max).to.be.below(contribution);
 
@@ -109,10 +110,7 @@ describe("EtherDivvy", function() {
     });
 
     it("throws an exception for an account contributing when withdrawal window is open", async function() {
-      helpers.timeTravel(15);
-
-      await etherDivvy.openWithdrawalWindow();
-      expect(await etherDivvy.withdrawable()).to.equal(true);
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       await expect(
         account1.sendTransaction({
@@ -139,8 +137,7 @@ describe("EtherDivvy", function() {
         value: ethers.utils.parseEther("4")
       });
 
-      helpers.timeTravel(14); // 14 days has passed and withdrawal window eligible to be open
-      await etherDivvy.openWithdrawalWindow();
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       expect(
         await etherDivvy.connect(account1).withdraw())
@@ -156,8 +153,7 @@ describe("EtherDivvy", function() {
     it("throws an exception for an account that did not contribute ether", async function() {
       expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
 
-      helpers.timeTravel(14);
-      await etherDivvy.openWithdrawalWindow();
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       await expect(
         etherDivvy.connect(account1).withdraw()
@@ -183,9 +179,7 @@ describe("EtherDivvy", function() {
 
   describe("#openWithdrawalWindow", function() {
     it("owner can open withdrawal window after 14 days since opening contribution window", async function() {
-      // mocks initial contribution window of 14 days and opens withdrawal window
-      helpers.timeTravel(14);
-      await etherDivvy.openWithdrawalWindow();
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       expect(await etherDivvy.withdrawable()).to.equal(true);
       expect(await etherDivvy.withdrawableAt()).to.not.equal(0);
@@ -200,8 +194,7 @@ describe("EtherDivvy", function() {
     });
 
     it("throws an exception when owner opens withdrawal window after its already open", async function() {
-      helpers.timeTravel(14);
-      await etherDivvy.openWithdrawalWindow();
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       await expect(
         etherDivvy.openWithdrawalWindow()
@@ -211,19 +204,16 @@ describe("EtherDivvy", function() {
 
   describe("#openContributionWindow", function() {
     it("owner can open contribution window after 3 days since opening withdrawal window", async function() {
-      // create a transaction to ensure account balances are set to zero when opening contribution window
       await account1.sendTransaction({
         from: account1.address,
         to: etherDivvy.address,
         value: ethers.utils.parseEther("8")
-      });
+      }); // creates a transaction to ensure account balance resets to zero when opening contribution window
 
-      // mocks initial contribution window of 14 days and opens withdrawal window
       helpers.timeTravel(14);
       await etherDivvy.openWithdrawalWindow();
 
       helpers.timeTravel(3);
-
       await etherDivvy.openContributionWindow();
 
       expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
@@ -245,10 +235,7 @@ describe("EtherDivvy", function() {
     });
 
     it("throws an exception when owner opens contribution window before three days has past", async function() {
-      // mocks initial contribution window of 14 days and opens withdrawal window
-      helpers.timeTravel(14);
-      await etherDivvy.openWithdrawalWindow();
-
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
       helpers.timeTravel(2);
 
       await expect(
@@ -272,9 +259,7 @@ describe("EtherDivvy", function() {
     });
 
     it("owner cannot change max contribution when withdrawal window is open", async function() {
-      // mocks initial contribution window of 14 days and opens withdrawal window
-      helpers.timeTravel(14);
-      await etherDivvy.openWithdrawalWindow();
+      helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       await expect(
         etherDivvy.changeMaxContribution(ethers.utils.parseEther("1"))
@@ -284,8 +269,8 @@ describe("EtherDivvy", function() {
     });
 
     it("owner cannot change max contribution lower than highestContribution", async function() {
-      let highestContribution = ethers.utils.parseEther("9");
-      let lowerMaxContribution = ethers.utils.parseEther("1");
+      const highestContribution = ethers.utils.parseEther("9");
+      const lowerMaxContribution = ethers.utils.parseEther("1");
 
       await account1.sendTransaction({
         from: account1.address,
