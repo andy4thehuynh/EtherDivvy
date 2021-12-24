@@ -279,6 +279,24 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.maxContribution()).to.equal(newMax);
     });
   });
+
+  describe("#getBalanceFor", function() {
+    it("returns balance for a partipating account", async function() {
+      const balance = ethers.utils.parseEther("6");
+
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: balance,
+      });
+
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(balance);
+    });
+
+    it("returns a zero balance for a non-partipating account", async function() {
+      expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
+    });
+  });
 });
 
 describe("EtherDivvy", function() {
@@ -596,7 +614,8 @@ describe("EtherDivvy", function() {
       await expect(
         etherDivvy.changeMaxContribution(ethers.utils.parseEther('1'))
       ).to.be.revertedWith(
-        'Withdrawal window is open. Please wait until next contribution window'
+        'Please wait until next contribution window to change max contribution'
+        // 'Withdrawal window is open. Please wait until next contribution window'
       );
     });
 
