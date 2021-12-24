@@ -124,7 +124,7 @@ describe("EtherDivvy", function() {
       );
     });
 
-    it("partipating accounts can withdraw ether from the contract", async function() {
+    it("participating accounts can withdraw ether from the contract", async function() {
       await account1.sendTransaction({
         from: account1.address,
         to: etherDivvy.address,
@@ -281,7 +281,7 @@ describe("EtherDivvy", function() {
   });
 
   describe("#getBalanceFor", function() {
-    it("returns balance for a partipating account", async function() {
+    it("returns balance for a participating account", async function() {
       const balance = ethers.utils.parseEther("6");
 
       await account1.sendTransaction({
@@ -293,8 +293,35 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(balance);
     });
 
-    it("returns a zero balance for a non-partipating account", async function() {
+    it("returns a zero balance for a non-participating account", async function() {
       expect(await etherDivvy.getBalanceFor(account1.address)).to.equal(0);
+    });
+  });
+
+  describe("#getAccounts", function() {
+    it("return a list of participating accounts for a contribution window", async function() {
+      await account1.sendTransaction({
+        from: account1.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("6"),
+      });
+      await account2.sendTransaction({
+        from: account2.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("6"),
+      });
+      await account3.sendTransaction({
+        from: account3.address,
+        to: etherDivvy.address,
+        value: ethers.utils.parseEther("6"),
+      });
+
+      expect(await etherDivvy.getAccounts())
+        .to.include.members([account1.address, account2.address, account3.address]);
+    });
+
+    it("returns an empty list if no partipating accounts", async function() {
+      expect(await etherDivvy.getAccounts()).to.be.empty;
     });
   });
 });
