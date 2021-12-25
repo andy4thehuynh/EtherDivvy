@@ -8,8 +8,13 @@ const safelyOpenWithdrawalWindow = async contract => {
   await contract.openWithdrawalWindow();
 };
 
+const safelyOpenContributionWindow = async contract => {
+  timeTravel(3); // 3 days has passed and contribution window eligible to be open
+  await contract.openContributionWindow();
+};
 
 module.exports = {
   timeTravel,
-  safelyOpenWithdrawalWindow
+  safelyOpenWithdrawalWindow,
+  safelyOpenContributionWindow
 };
