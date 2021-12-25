@@ -4,7 +4,7 @@ This smart contract accepts contributions in ETH from people and then divides th
 ## Address
 | Name       | Address                                                                                                                     |
 | :--------- | :-------------------------------------------------------------------------------------------------------------------------- |
-| Kovan      | [0x1072f8c8aFA2567B5D63E86adC12Aa1251D2110C](https://kovan.etherscan.io/address/0x1072f8c8aFA2567B5D63E86adC12Aa1251D2110C) |
+| Kovan      | [0xd4E9B12B71b327922b5E5B5E6C0A597D71393c22](https://kovan.etherscan.io/address/0xd4E9B12B71b327922b5E5B5E6C0A597D71393c22) |
 
 ## More Info
 If you have further questions and interest on this project, feel free to contact myself or [HackerDAO](https://www.hackerdao.xyz/) (formally Optilistic Labs).
