@@ -17,7 +17,7 @@ describe("EtherDivvy", function() {
   });
 
 
-  it("assigns owner to contract deployer's address", async function(){
+  it("assigns owner to contract deployer address", async function(){
     expect(await etherDivvy.owner()).to.equal(owner.address);
   });
 
@@ -201,7 +201,7 @@ describe("EtherDivvy", function() {
       );
     });
 
-    it("throws an exception when owner opens withdrawal window after its already open", async function() {
+    it("throws an exception when owner opens withdrawal window after already open", async function() {
       helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       await expect(
@@ -271,7 +271,7 @@ describe("EtherDivvy", function() {
       expect(await etherDivvy.maxContribution()).to.equal(newMax);
     });
 
-    it("owner cannot change max contribution when withdrawal window is open", async function() {
+    it("throws an exception during withdrawal window when owner changes max contribution", async function() {
       helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       await expect(
@@ -281,7 +281,7 @@ describe("EtherDivvy", function() {
       );
     });
 
-    it("owner cannot change max contribution lower than highestContribution", async function() {
+    it("throws an exception when owner changes max contribution lower than highestContribution", async function() {
       const highestContribution = ethers.utils.parseEther("9");
       const lowerContribution   = ethers.utils.parseEther("1");
 
@@ -300,13 +300,23 @@ describe("EtherDivvy", function() {
       );
     });
 
-    it("owner cannot change max contribution to zero ether", async function() {
+    it("throws an exception when owner changes max contribution to zero ether", async function() {
       const invalidMax = ethers.utils.parseEther("0");
 
       await expect(
         etherDivvy.changeMaxContribution(invalidMax)
       ).to.be.revertedWith(
         "Please set max contribution higher than zero"
+      );
+    });
+
+    it("throws an exception when owner changes max contribution to current max contribution amount", async function() {
+      const currentMax = await etherDivvy.maxContribution();
+
+      await expect(
+        etherDivvy.changeMaxContribution(currentMax)
+      ).to.be.revertedWith(
+        "Please set max contribution to a different amount than current max contribution"
       );
     });
   });

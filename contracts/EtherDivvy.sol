@@ -68,7 +68,7 @@ contract EtherDivvy is Ownable {
         balances[msg.sender] = 0;
         uint funds = total / accounts.length;
 
-        (bool success, bytes memory data) = msg.sender.call{value: funds}('');
+        (bool success, ) = msg.sender.call{value: funds}("");
         require(success, "Something went wrong.. failed to send Ether");
     }
 
@@ -102,6 +102,7 @@ contract EtherDivvy is Ownable {
         require(!withdrawable, "Please wait until next contribution window to change max contribution");
         require(amount >= highestContribution, "Please set max contribution higher than highest contribution");
         require(amount > 0 ether, "Please set max contribution higher than zero");
+        require(amount != maxContribution, "Please set max contribution to a different amount than current max contribution");
 
         maxContribution = amount;
         emit ChangeMaxContribution(amount);
