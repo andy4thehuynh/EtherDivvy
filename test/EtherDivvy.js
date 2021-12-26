@@ -29,7 +29,7 @@ describe("EtherDivvy", function() {
   });
 
   describe("#highestContribution", function() {
-    it("returns highest amount accounts have contributed for a contribution window", async function() {
+    it("returns highest amount an account has contributed for a contribution window", async function() {
       const highest = ethers.utils.parseEther("9");
       const notHighest = ethers.utils.parseEther("5");
 
@@ -49,7 +49,7 @@ describe("EtherDivvy", function() {
   });
 
   describe("#receive", function() {
-    it("accounts can contribute ether to the contract", async function() {
+    it("allows accounts to contribute ether to the contract", async function() {
       const amount1 = ethers.utils.parseEther("5");
       const amount2 = ethers.utils.parseEther("6");
       const total   = ethers.utils.parseEther("11");
@@ -129,7 +129,7 @@ describe("EtherDivvy", function() {
   });
 
   describe("#withdraw", function() {
-    it("participating accounts can withdraw ether from the contract", async function() {
+    it("allows participating accounts to withdraw ether from the contract", async function() {
       await account1.sendTransaction({
         from: account1.address,
         to: etherDivvy.address,
@@ -184,7 +184,7 @@ describe("EtherDivvy", function() {
   });
 
   describe("#openWithdrawalWindow", function() {
-    it("owner can open withdrawal window 14 days after contribution window opens", async function() {
+    it("allows owner to open withdrawal window 14 days after contribution window opens", async function() {
       helpers.safelyOpenWithdrawalWindow(etherDivvy);
 
       expect(await etherDivvy.withdrawable()).to.equal(true);
@@ -206,12 +206,14 @@ describe("EtherDivvy", function() {
 
       await expect(
         etherDivvy.openWithdrawalWindow()
-      ).to.be.revertedWith("Withdrawal window is already open");
+      ).to.be.revertedWith(
+        "Withdrawal window is already open"
+      );
     });
   });
 
   describe("#openContributionWindow", function() {
-    it("owner can open contribution window after 3 days since opening withdrawal window", async function() {
+    it("allows owner to open contribution window 3 days after opening withdrawal window", async function() {
       const amount = ethers.utils.parseEther("8");
 
       await account1.sendTransaction({
@@ -258,7 +260,7 @@ describe("EtherDivvy", function() {
   });
 
   describe("#changeMaxContribution", function() {
-    it("owner can change max contribution", async function() {
+    it("allows owner to change max contribution", async function() {
       const oldMax = ethers.utils.parseEther("10");
       const newMax = ethers.utils.parseEther("50");
 
